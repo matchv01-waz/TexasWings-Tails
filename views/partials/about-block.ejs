@@ -1,0 +1,27 @@
+<div class="about-grid">
+  <div class="about-photo">
+    <div class="about-frame">
+      <% if (aboutImage) { %>
+      <%- imgTag(aboutImage, { alt: aboutImage.alt || 'Wasim, owner of Texas Wings & Tails in Dallas, Texas', sizes: '(min-width: 960px) 460px, 90vw' }) %>
+      <% } else { %>
+      <div class="about-placeholder">
+        <span class="monogram" aria-hidden="true">W</span>
+        <span class="about-placeholder-text">Photo of Wasim coming soon</span>
+      </div>
+      <% } %>
+    </div>
+    <% if (settings.years_experience) { %>
+    <div class="years-badge"><strong><%= settings.years_experience %></strong><span>years with birds</span></div>
+    <% } %>
+  </div>
+  <div class="about-copy">
+    <p class="eyebrow">The person behind the aviary</p>
+    <<%= locals.headingTag || 'h2' %> class="section-title"><%= settings.about_heading %></<%= locals.headingTag || 'h2' %>>
+    <div class="prose prose-lg"><%- textToHtml(settings.about_body) %></div>
+    <% if (settings.about_signature) { %><p class="signature">— <%= settings.about_signature %></p><% } %>
+    <div class="about-actions">
+      <% if (!locals.fullPage) { %><a class="btn btn-primary" href="/about">More About Wasim</a><% } %>
+      <a class="btn btn-outline" href="/contact">Contact Wasim</a>
+    </div>
+  </div>
+</div>

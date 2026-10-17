@@ -1,0 +1,125 @@
+<%- include('partials/head') %>
+<% const trustIcons = ['award', 'heart', 'feather', 'chat']; %>
+
+<section class="hero<%= heroImage ? ' hero-photo' : ' hero-art' %>" aria-labelledby="hero-title">
+  <div class="hero-media">
+    <% if (heroImage) { %>
+      <%- imgTag(heroImage, { alt: heroImage.alt || 'A companion parrot raised at Texas Wings & Tails in Dallas, Texas', sizes: '100vw', priority: true }) %>
+    <% } else { %>
+      <img class="hero-illustration" src="/static/img/brand/parrot-silhouette.png" alt="" width="513" height="640">
+    <% } %>
+  </div>
+  <div class="wrap hero-content">
+    <p class="hero-eyebrow"><%- icon('star') %> <%= settings.hero_eyebrow %></p>
+    <h1 id="hero-title" class="hero-title"><%- headlineHtml(settings.hero_headline) %></h1>
+    <p class="hero-sub"><%= settings.hero_subheadline %></p>
+    <div class="hero-actions">
+      <a class="btn btn-gold btn-lg" href="/birds"><%= settings.hero_primary_label %> <%- icon('arrow-right') %></a>
+      <a class="btn btn-ghost-light btn-lg" href="/contact"><%= settings.hero_secondary_label %></a>
+      <% if (wa) { %><a class="btn btn-wa btn-lg" href="<%= wa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> WhatsApp</a><% } %>
+    </div>
+    <% if (openCount) { %>
+    <p class="hero-note"><span class="pulse" aria-hidden="true"></span><a href="/birds?status=available"><%= openCount %> <%= openCount === 1 ? 'bird' : 'birds' %> available now</a></p>
+    <% } %>
+  </div>
+</section>
+
+<section class="trust" aria-label="Why families choose <%= settings.site_name %>">
+  <div class="wrap">
+    <ul class="trust-grid">
+      <% for (let i = 1; i <= 4; i++) { if (!settings['trust' + i + '_title']) continue; %>
+      <li class="trust-item">
+        <span class="trust-icon"><%- icon(trustIcons[i - 1]) %></span>
+        <div>
+          <h2 class="trust-title"><%= settings['trust' + i + '_title'] %></h2>
+          <% if (settings['trust' + i + '_text']) { %><p><%= settings['trust' + i + '_text'] %></p><% } %>
+        </div>
+      </li>
+      <% } %>
+    </ul>
+  </div>
+</section>
+
+<section class="section" id="available" aria-labelledby="available-heading">
+  <div class="wrap">
+    <div class="section-head section-head-split">
+      <div>
+        <p class="eyebrow">Find your companion</p>
+        <h2 id="available-heading" class="section-title"><%= settings.birds_heading %></h2>
+        <p class="lead"><%= settings.birds_intro %></p>
+      </div>
+      <% if (birds.length) { %><a class="link-arrow" href="/birds">See all birds <%- icon('arrow-right') %></a><% } %>
+    </div>
+    <% if (birds.length) { %>
+    <div class="bird-grid">
+      <% for (const bird of birds) { %><%- include('partials/bird-card', { bird }) %><% } %>
+    </div>
+    <% } else { %>
+      <%- include('partials/empty-birds') %>
+    <% } %>
+  </div>
+</section>
+
+<section class="section section-cream" id="our-birds" aria-labelledby="species-heading">
+  <div class="wrap">
+    <div class="section-head section-head-center">
+      <p class="eyebrow">Species we raise</p>
+      <h2 id="species-heading" class="section-title"><%= settings.species_heading %></h2>
+      <p class="lead"><%= settings.species_intro %></p>
+    </div>
+    <div class="species-grid">
+      <% for (const sp of species) { %><%- include('partials/species-card', { sp }) %><% } %>
+    </div>
+  </div>
+</section>
+
+<section class="section about-section" aria-label="About Wasim">
+  <div class="wrap">
+    <%- include('partials/about-block') %>
+  </div>
+</section>
+
+<% if (gallery.length) { %>
+<section class="section section-cream" aria-labelledby="gallery-heading">
+  <div class="wrap">
+    <div class="section-head section-head-split">
+      <div>
+        <p class="eyebrow">Gallery</p>
+        <h2 id="gallery-heading" class="section-title"><%= settings.gallery_heading %></h2>
+        <p class="lead"><%= settings.gallery_intro %></p>
+      </div>
+      <a class="link-arrow" href="/gallery">View full gallery <%- icon('arrow-right') %></a>
+    </div>
+    <%- include('partials/masonry', { items: gallery }) %>
+  </div>
+</section>
+<% } %>
+
+<% if (testimonials.length) { %>
+<section class="section section-forest" aria-labelledby="testimonials-heading">
+  <div class="wrap">
+    <div class="section-head section-head-center">
+      <p class="eyebrow eyebrow-gold">Testimonials</p>
+      <h2 id="testimonials-heading" class="section-title"><%= settings.testimonials_heading %></h2>
+    </div>
+    <%- include('partials/testimonials') %>
+  </div>
+</section>
+<% } %>
+
+<% if (faqs.length) { %>
+<section class="section" aria-labelledby="faq-heading">
+  <div class="wrap faq-layout">
+    <div class="faq-intro">
+      <p class="eyebrow">Good to know</p>
+      <h2 id="faq-heading" class="section-title">Frequently Asked Questions</h2>
+      <p class="lead">Answers to common questions about our birds and bringing one home.</p>
+      <a class="link-arrow" href="/faq">See all questions <%- icon('arrow-right') %></a>
+    </div>
+    <%- include('partials/faq-list', { openFirst: true }) %>
+  </div>
+</section>
+<% } %>
+
+<%- include('partials/contact-section') %>
+<%- include('partials/foot') %>

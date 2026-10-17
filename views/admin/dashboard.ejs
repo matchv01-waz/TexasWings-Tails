@@ -1,0 +1,71 @@
+<%- include('top') %>
+<% const todo = checklist.filter(c => !c.done); %>
+<div class="page-head">
+  <div>
+    <h1>Hello, <%= admin.username %></h1>
+    <p class="muted">Here's what's happening on your website.</p>
+  </div>
+  <a class="btn btn-primary btn-lg" href="/admin/birds/new"><%- icon('plus') %> Add a bird</a>
+</div>
+
+<div class="stat-grid">
+  <% for (const [key, label] of Object.entries(STATUSES)) { %>
+  <a class="stat stat-<%= key %>" href="/admin/birds?status=<%= key %>"><strong><%= counts[key] || 0 %></strong><span><%= label %></span></a>
+  <% } %>
+  <a class="stat stat-msg" href="/admin/inquiries"><strong><%= unread %></strong><span>New messages</span></a>
+</div>
+
+<div class="dash-grid">
+  <section class="card">
+    <h2 class="card-title">Quick actions</h2>
+    <div class="quick-actions">
+      <a href="/admin/birds/new"><%- icon('plus') %> Add a bird</a>
+      <a href="/admin/birds"><%- icon('feather') %> Change a bird's status or price</a>
+      <a href="/admin/gallery"><%- icon('upload') %> Upload gallery photos</a>
+      <a href="/admin/faqs"><%- icon('help') %> Answer FAQs</a>
+      <a href="/admin/testimonials/new"><%- icon('chat') %> Add a testimonial</a>
+      <a href="/" target="_blank" rel="noopener"><%- icon('external') %> View your website</a>
+    </div>
+  </section>
+
+  <% if (todo.length) { %>
+  <section class="card">
+    <h2 class="card-title">Finish setting up <span class="pill"><%= checklist.length - todo.length %> / <%= checklist.length %></span></h2>
+    <ul class="checklist">
+      <% for (const c of checklist) { %>
+      <li class="<%= c.done ? 'done' : '' %>"><span class="check"><%- c.done ? icon('check') : '' %></span><% if (c.done) { %><span><%= c.label %></span><% } else { %><a href="<%= c.href %>"><%= c.label %></a><% } %></li>
+      <% } %>
+    </ul>
+  </section>
+  <% } %>
+
+  <section class="card">
+    <h2 class="card-title">Latest messages <a class="card-link" href="/admin/inquiries">See all</a></h2>
+    <% if (inquiries.length) { %>
+    <ul class="list">
+      <% for (const q of inquiries) { %>
+      <li><a href="/admin/inquiries/<%= q.id %>" class="list-row <%= q.is_read ? '' : 'unread' %>">
+        <span><strong><%= q.name %></strong><small><%= excerpt(q.message, 70) %></small></span>
+        <small class="muted"><%= formatDate(q.created_at, { month: 'short', day: 'numeric' }) %></small>
+      </a></li>
+      <% } %>
+    </ul>
+    <% } else { %><p class="muted">No messages yet. Messages sent from the contact form will appear here.</p><% } %>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">Recently updated birds <a class="card-link" href="/admin/birds">See all</a></h2>
+    <% if (recent.length) { %>
+    <ul class="list">
+      <% for (const b of recent) { %>
+      <li><a href="/admin/birds/<%= b.id %>" class="list-row">
+        <span class="list-thumb"><% if (b.cover) { %><%- imgTag(b.cover, { alt: '', sizes: '48px' }) %><% } %></span>
+        <span><strong><%= b.name %></strong><small><%= b.species_singular || 'No species' %></small></span>
+        <span class="status status-<%= b.status %>"><%= STATUSES[b.status] %></span>
+      </a></li>
+      <% } %>
+    </ul>
+    <% } else { %><p class="muted">No birds yet. <a href="/admin/birds/new">Add your first bird</a>.</p><% } %>
+  </section>
+</div>
+<%- include('bottom') %>

@@ -1,0 +1,32 @@
+<%- include('top') %>
+<div class="page-head">
+  <div>
+    <a class="back" href="/admin/inquiries"><%- icon('arrow-left') %> All messages</a>
+    <h1><%= q.name %></h1>
+    <p class="muted"><%= formatDate(q.created_at, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) %></p>
+  </div>
+  <div class="head-actions">
+    <form method="post" action="/admin/inquiries/<%= q.id %>/unread"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-outline" type="submit">Mark as unread</button></form>
+    <form method="post" action="/admin/inquiries/<%= q.id %>/delete" data-confirm="Delete this message?"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-danger-outline" type="submit"><%- icon('trash') %> Delete</button></form>
+  </div>
+</div>
+<div class="edit-layout">
+  <section class="card edit-main">
+    <% if (q.interest) { %><p class="pill pill-gold">Interested in: <%= q.interest.split(' — ')[0] %></p><% } %>
+    <div class="message-body"><%- textToHtml(q.message) %></div>
+  </section>
+  <aside class="card edit-side">
+    <h2 class="card-title">Reply</h2>
+    <div class="stack">
+      <a class="btn btn-primary btn-block" href="<%= replyMail %>"><%- icon('mail') %> Reply by email</a>
+      <% if (replyWa) { %><a class="btn btn-wa btn-block" href="<%= replyWa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> Reply on WhatsApp</a><% } %>
+    </div>
+    <dl class="details">
+      <div><dt>Email</dt><dd><a href="mailto:<%= q.email %>"><%= q.email %></a></dd></div>
+      <% if (q.phone) { %><div><dt>Phone</dt><dd><a href="tel:<%= q.phone.replace(/[^\d+]/g, '') %>"><%= q.phone %></a></dd></div><% } %>
+      <% if (q.whatsapp) { %><div><dt>WhatsApp</dt><dd><%= q.whatsapp %></dd></div><% } %>
+      <% if (q.interest && q.interest.includes(' — ')) { %><div><dt>Bird page</dt><dd><a href="<%= q.interest.split(' — ')[1] %>" target="_blank" rel="noopener">Open listing</a></dd></div><% } %>
+    </dl>
+  </aside>
+</div>
+<%- include('bottom') %>

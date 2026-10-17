@@ -1,0 +1,87 @@
+<%
+  const socials = [
+    ['instagram', settings.instagram_url, 'Instagram'],
+    ['facebook', settings.facebook_url, 'Facebook'],
+    ['tiktok', settings.tiktok_url, 'TikTok'],
+    ['youtube', settings.youtube_url, 'YouTube'],
+  ].filter(s => s[1]);
+  const bar = locals.mobileBar || {};
+  const barWa = bar.wa !== undefined ? bar.wa : wa;
+%></main>
+
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div class="footer-brand">
+      <a class="logo logo-light" href="/" aria-label="<%= settings.site_name %> — home">
+        <span class="logo-mark logo-badge" aria-hidden="true"><img src="/static/img/brand/mark.png" alt="" width="37" height="46"></span>
+        <span class="logo-text"><span class="logo-name">Texas Wings <em>&amp;</em> Tails</span><span class="logo-sub"><%= settings.location %></span></span>
+      </a>
+      <p class="footer-tagline">&ldquo;<%= settings.tagline %>&rdquo;</p>
+      <% if (socials.length) { %>
+      <ul class="socials" aria-label="Social media">
+        <% for (const [ic, url, label] of socials) { %>
+        <li><a href="<%= url %>" target="_blank" rel="noopener" aria-label="<%= label %>"><%- icon(ic) %></a></li>
+        <% } %>
+      </ul>
+      <% } %>
+    </div>
+    <nav class="footer-col" aria-label="Footer">
+      <h2 class="footer-title">Explore</h2>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/birds">Available Birds</a></li>
+        <li><a href="/species">Our Birds</a></li>
+        <li><a href="/gallery">Gallery</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/faq">FAQ</a></li>
+        <li><a href="/contact">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="footer-col">
+      <h2 class="footer-title">Our Birds</h2>
+      <ul>
+        <% for (const sp of navSpecies) { %><li><a href="/species/<%= sp.slug %>"><%= sp.name %></a></li><% } %>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h2 class="footer-title">Contact</h2>
+      <ul class="footer-contact">
+        <li><%- icon('pin') %> <%= settings.location %></li>
+        <% if (settings.contact_email) { %><li><a href="<%= mail %>"><%- icon('mail') %> <%= settings.contact_email %></a></li><% } %>
+        <% if (wa) { %><li><a href="<%= wa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> WhatsApp</a></li><% } %>
+        <% if (settings.phone) { %><li><a href="tel:<%= settings.phone.replace(/[^\d+]/g, '') %>"><%- icon('phone') %> <%= settings.phone %></a></li><% } %>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    <p>&copy; <%= year %> <%= settings.site_name %> &middot; <%= settings.location %></p>
+    <p>Companion parrots raised with care.</p>
+  </div>
+</footer>
+
+<% if (!locals.hideMobileBar) { %>
+<div class="mobile-bar" data-mobile-bar>
+  <% if (barWa) { %>
+  <a class="btn btn-wa" href="<%= barWa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> <%= bar.waLabel || 'WhatsApp' %></a>
+  <% } else if (mail) { %>
+  <a class="btn btn-outline" href="<%= mail %>"><%- icon('mail') %> Email</a>
+  <% } %>
+  <a class="btn btn-primary" href="<%= bar.href || (currentPath.startsWith('/birds') ? '/contact' : '/birds') %>"><%= bar.label || (currentPath.startsWith('/birds') ? 'Contact Wasim' : 'Available Birds') %></a>
+</div>
+<% } %>
+<% if (wa) { %>
+<a class="wa-float" href="<%= barWa || wa %>" target="_blank" rel="noopener" aria-label="Chat with Wasim on WhatsApp"><%- icon('whatsapp') %></a>
+<% } %>
+
+<div class="lightbox" data-lightbox-root hidden role="dialog" aria-modal="true" aria-label="Photo viewer">
+  <button class="lb-btn lb-close" type="button" data-lb-close aria-label="Close"><%- icon('close') %></button>
+  <button class="lb-btn lb-prev" type="button" data-lb-prev aria-label="Previous photo"><%- icon('chevron-left') %></button>
+  <figure class="lb-figure">
+    <img class="lb-img" alt="" data-lb-img>
+    <figcaption class="lb-caption" data-lb-caption></figcaption>
+  </figure>
+  <button class="lb-btn lb-next" type="button" data-lb-next aria-label="Next photo"><%- icon('chevron-right') %></button>
+  <p class="lb-counter" data-lb-counter aria-live="polite"></p>
+</div>
+</body>
+</html>

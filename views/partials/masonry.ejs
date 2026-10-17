@@ -1,0 +1,11 @@
+<div class="masonry" data-lightbox-group>
+  <% for (const g of items) { const alt = g.image.alt || g.caption || (g.category ? `${g.category} at ${settings.site_name}` : `Photo from ${settings.site_name}`); %>
+  <figure class="masonry-item">
+    <a href="<%= imgSrc(g.image, 1600) %>" data-lightbox data-caption="<%= g.caption %>" data-alt="<%= alt %>">
+      <%- imgTag(g.image, { alt, sizes: '(min-width: 1100px) 360px, (min-width: 700px) 45vw, 50vw' }) %>
+      <span class="masonry-zoom" aria-hidden="true"><%- icon('expand') %></span>
+    </a>
+    <% if (g.caption) { %><figcaption><%= g.caption %></figcaption><% } %>
+  </figure>
+  <% } %>
+</div>

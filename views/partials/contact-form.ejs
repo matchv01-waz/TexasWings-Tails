@@ -1,0 +1,56 @@
+<%
+  const v = cf.values || {};
+  const e = cf.errors || {};
+  function field(name, label, type, opts) {
+    opts = opts || {};
+    const id = 'cf-' + name;
+%>
+  <div class="field<%= opts.full ? ' field-full' : '' %><%= e[name] ? ' has-error' : '' %>">
+    <label for="<%= id %>"><%= label %><% if (!opts.required) { %> <span class="optional">(optional)</span><% } %></label>
+    <% if (type === 'textarea') { %>
+    <textarea id="<%= id %>" name="<%= name %>" rows="5" maxlength="4000" <%- opts.required ? 'required' : '' %> <%- e[name] ? `aria-invalid="true" aria-describedby="${id}-err"` : '' %>><%= v[name] || '' %></textarea>
+    <% } else { %>
+    <input id="<%= id %>" name="<%= name %>" type="<%= type %>" value="<%= v[name] || '' %>" <%- opts.required ? 'required' : '' %> <%- opts.auto ? `autocomplete="${opts.auto}"` : '' %> maxlength="<%= opts.max || 200 %>" <%- e[name] ? `aria-invalid="true" aria-describedby="${id}-err"` : '' %>>
+    <% } %>
+    <% if (e[name]) { %><p class="field-error" id="<%= id %>-err"><%= e[name] %></p><% } %>
+  </div>
+<% } %>
+<form class="contact-form" method="post" action="/contact#contact" id="contact-form">
+  <% if (e.form) { %><div class="alert alert-error" role="alert"><%= e.form %></div><% } %>
+  <input type="hidden" name="t" value="<%= cf.token %>">
+  <div class="hp-field" aria-hidden="true">
+    <label for="cf-website">Leave this field empty</label>
+    <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off">
+  </div>
+  <div class="form-grid">
+    <% field('name', 'Name', 'text', { required: true, auto: 'name', max: 100 }) %>
+    <% field('email', 'Email', 'email', { required: true, auto: 'email' }) %>
+    <% field('phone', 'Phone', 'tel', { auto: 'tel', max: 40 }) %>
+    <% field('whatsapp', 'WhatsApp number', 'tel', { max: 40 }) %>
+    <div class="field field-full">
+      <label for="cf-interest">Bird or species you're interested in <span class="optional">(optional)</span></label>
+      <div class="select-wrap">
+        <select id="cf-interest" name="interest">
+          <option value="">Choose one…</option>
+          <% if (cf.birds.length) { %>
+          <optgroup label="Birds listed now">
+            <% for (const b of cf.birds) { const val = 'bird:' + b.id; %>
+            <option value="<%= val %>" <%- v.interest === val ? 'selected' : '' %>><%= b.name %><%= b.species_singular ? ' — ' + b.species_singular : '' %></option>
+            <% } %>
+          </optgroup>
+          <% } %>
+          <optgroup label="Species">
+            <% for (const sp of cf.species) { const val = 'species:' + sp.slug; %>
+            <option value="<%= val %>" <%- v.interest === val ? 'selected' : '' %>><%= sp.name %></option>
+            <% } %>
+          </optgroup>
+          <option value="unsure" <%- v.interest === 'unsure' ? 'selected' : '' %>>Not sure yet — I'd like advice</option>
+        </select>
+        <%- icon('chevron-down') %>
+      </div>
+    </div>
+    <% field('message', 'Message', 'textarea', { required: true, full: true }) %>
+  </div>
+  <button class="btn btn-primary btn-lg btn-block" type="submit">Send Message <%- icon('arrow-right') %></button>
+  <p class="form-note">Your details are only used to reply to your message.</p>
+</form>

@@ -1,0 +1,35 @@
+<section class="section contact-section" id="contact" aria-labelledby="contact-heading">
+  <div class="wrap contact-grid">
+    <div class="contact-panel">
+      <p class="eyebrow eyebrow-gold">Get in touch</p>
+      <<%= locals.headingTag || 'h2' %> id="contact-heading" class="contact-heading"><%= settings.contact_heading %></<%= locals.headingTag || 'h2' %>>
+      <p class="contact-intro"><%= settings.contact_intro %></p>
+      <% if (mail || wa) { %>
+      <div class="contact-buttons">
+        <% if (mail) { %><a class="btn btn-light btn-lg" href="<%= mail %>"><%- icon('mail') %> Email Wasim</a><% } %>
+        <% if (wa) { %><a class="btn btn-wa btn-lg" href="<%= wa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> WhatsApp Wasim</a><% } %>
+      </div>
+      <% } %>
+      <ul class="contact-list">
+        <li><%- icon('pin') %><span><strong>Location</strong><%= settings.location %></span></li>
+        <% if (settings.contact_email) { %><li><%- icon('mail') %><span><strong>Email</strong><a href="<%= mail %>"><%= settings.contact_email %></a></span></li><% } %>
+        <% if (wa) { %><li><%- icon('whatsapp') %><span><strong>WhatsApp</strong><a href="<%= wa %>" target="_blank" rel="noopener"><%= settings.whatsapp_number %></a></span></li><% } %>
+        <% if (settings.phone) { %><li><%- icon('phone') %><span><strong>Phone</strong><a href="tel:<%= settings.phone.replace(/[^\d+]/g, '') %>"><%= settings.phone %></a></span></li><% } %>
+      </ul>
+      <% if (settings.response_note) { %><p class="contact-note"><%= settings.response_note %></p><% } %>
+    </div>
+    <div class="contact-card">
+      <% if (locals.sent) { %>
+      <div class="sent-state" role="status">
+        <span class="sent-icon"><%- icon('check') %></span>
+        <h3>Thank you — your message was sent.</h3>
+        <p>Wasim will get back to you as soon as possible.</p>
+        <a class="btn btn-primary" href="/birds">Browse Available Birds</a>
+      </div>
+      <% } else { %>
+      <h3 class="contact-card-title">Send Wasim a message</h3>
+      <%- include('contact-form') %>
+      <% } %>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,39 @@
+<% const actionBase = `/admin/${base}/${ownerId}/photos`; %>
+<section class="card" id="photos">
+  <h2 class="card-title">Photos <small class="muted"><%= photos.length %> photo<%= photos.length === 1 ? '' : 's' %></small></h2>
+  <p class="help">The first photo is the cover photo. Drag photos to change the order, or use the arrows.</p>
+  <form class="dropzone" method="post" action="<%= actionBase %>" enctype="multipart/form-data" data-upload-form>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label class="dropzone-label">
+      <%- icon('upload') %>
+      <strong>Tap to add photos</strong>
+      <span>You can choose several at once · JPG, PNG, HEIC or WebP</span>
+      <input type="file" name="photos" accept="image/*" multiple data-auto-upload>
+    </label>
+    <p class="upload-status" data-upload-status hidden>Uploading and optimizing photos… please wait.</p>
+    <noscript><button class="btn btn-primary" type="submit">Upload</button></noscript>
+  </form>
+  <% if (photos.length) { %>
+  <ul class="photo-grid" data-sortable data-order-url="<%= actionBase %>/order">
+    <% photos.forEach((p, i) => { %>
+    <li class="photo-tile" draggable="true" data-id="<%= p.id %>">
+      <div class="photo-img"><%- imgTag(p, { alt: p.alt || '', sizes: '200px' }) %><% if (i === 0) { %><span class="cover-pill">Cover</span><% } %><span class="drag-handle" aria-hidden="true"><%- icon('grip') %></span></div>
+      <div class="photo-tools">
+        <% if (i > 0) { %>
+        <form method="post" action="<%= actionBase %>/order"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="id" value="<%= p.id %>"><input type="hidden" name="dir" value="first">
+          <button class="icon-btn" type="submit" title="Make this the cover photo" aria-label="Make cover photo"><%- icon('cover') %></button></form>
+        <form method="post" action="<%= actionBase %>/order"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="id" value="<%= p.id %>"><input type="hidden" name="dir" value="up">
+          <button class="icon-btn" type="submit" title="Move earlier" aria-label="Move earlier"><%- icon('chevron-left') %></button></form>
+        <% } %>
+        <% if (i < photos.length - 1) { %>
+        <form method="post" action="<%= actionBase %>/order"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="id" value="<%= p.id %>"><input type="hidden" name="dir" value="down">
+          <button class="icon-btn" type="submit" title="Move later" aria-label="Move later"><%- icon('chevron-right') %></button></form>
+        <% } %>
+        <form method="post" action="<%= actionBase %>/<%= p.id %>/delete" data-confirm="Delete this photo?"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="icon-btn danger" type="submit" title="Delete photo" aria-label="Delete photo"><%- icon('trash') %></button></form>
+      </div>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>

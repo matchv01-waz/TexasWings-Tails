@@ -1,0 +1,152 @@
+<%
+  const b = bird;
+  const altBase = [b.name, b.mutation, b.species_singular].filter(Boolean).join(', ');
+  const showPrice = settings.show_prices === '1' && b.price !== null;
+  const age = ageText(b);
+  const facts = [
+    ['Species', b.species_name ? `<a href="/species/${b.species_slug}">${esc(b.species_singular || b.species_name)}</a>` : ''],
+    ['Color / mutation', esc(b.mutation)],
+    ['Sex', b.sex && b.sex !== 'unknown' ? esc(SEXES[b.sex]) : 'Unknown'],
+    ['Age', esc(age)],
+    ['Hatch date', b.hatch_date ? esc(formatDate(b.hatch_date)) : ''],
+    ['DNA', esc(b.dna_status)],
+    ['Weaning', esc(b.weaning_status)],
+    ['Status', `<span class="badge badge-inline badge-${b.status}">${STATUSES[b.status]}</span>`],
+  ].filter(f => f[1]);
+  const pickup = b.pickup_info || settings.default_pickup_info;
+  const shipping = b.shipping_info || settings.default_shipping_info;
+  const sold = b.status === 'sold';
+  const mobileBar = sold ? {} : { wa: birdWa, waLabel: 'WhatsApp', href: `/contact?bird=${b.id}#contact`, label: 'Ask About ' + b.name };
+%>
+<%- include('partials/head', { mobileBar }) %>
+
+<div class="wrap">
+  <nav class="breadcrumbs breadcrumbs-top" aria-label="Breadcrumb">
+    <a href="/">Home</a><span aria-hidden="true">/</span><a href="/birds">Available Birds</a><span aria-hidden="true">/</span><span aria-current="page"><%= b.name %></span>
+  </nav>
+</div>
+
+<section class="wrap bird-detail">
+  <div class="bird-gallery" data-carousel-root>
+    <div class="carousel" data-carousel data-lightbox-group tabindex="0" aria-roledescription="carousel" aria-label="Photos of <%= b.name %>">
+      <% if (b.photos.length) { b.photos.forEach((p, i) => { %>
+      <div class="slide" role="group" aria-roledescription="slide" aria-label="<%= i + 1 %> of <%= b.photos.length %>">
+        <a href="<%= imgSrc(p, 1600) %>" data-lightbox data-alt="<%= p.alt || altBase %>" data-caption="<%= b.name %>">
+          <%- imgTag(p, { alt: p.alt || `${altBase} — photo ${i + 1}`, sizes: '(min-width: 1000px) 620px, 100vw', priority: i === 0 }) %>
+        </a>
+      </div>
+      <% }) } else { %>
+      <div class="slide"><%- include('partials/placeholder', { accent: b.species_accent, label: 'Photos coming soon' }) %></div>
+      <% } %>
+    </div>
+    <span class="badge badge-<%= b.status %> badge-float"><%= STATUSES[b.status] %></span>
+    <% if (b.photos.length > 1) { %>
+    <button class="carousel-btn carousel-prev" type="button" data-carousel-prev aria-label="Previous photo"><%- icon('chevron-left') %></button>
+    <button class="carousel-btn carousel-next" type="button" data-carousel-next aria-label="Next photo"><%- icon('chevron-right') %></button>
+    <p class="carousel-counter" data-carousel-counter><span>1</span> / <%= b.photos.length %></p>
+    <div class="thumbs" data-thumbs>
+      <% b.photos.forEach((p, i) => { %>
+      <button type="button" class="thumb" data-goto="<%= i %>" aria-label="Show photo <%= i + 1 %>" <%- i === 0 ? 'aria-current="true"' : '' %>>
+        <%- imgTag(p, { alt: '', sizes: '96px' }) %>
+      </button>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="bird-summary">
+    <% if (b.species_name) { %><p class="eyebrow"><a href="/species/<%= b.species_slug %>"><%= b.species_singular || b.species_name %></a></p><% } %>
+    <h1 class="bird-title"><%= b.name %></h1>
+    <% if (b.mutation) { %><p class="bird-mutation"><%= b.mutation %></p><% } %>
+
+    <div class="price-block">
+      <% if (sold) { %><span class="price-muted">This bird has found a home</span>
+      <% } else if (showPrice) { %><span class="price price-lg"><%= formatPrice(b.price) %></span><% if (b.price_note) { %><span class="price-note"><%= b.price_note %></span><% } %>
+      <% } else { %><span class="price-muted">Contact Wasim for price</span><% } %>
+    </div>
+
+    <dl class="facts">
+      <% for (const [label, val] of facts) { %><div><dt><%= label %></dt><dd><%- val %></dd></div><% } %>
+    </dl>
+
+    <div class="cta-stack">
+      <% if (!sold) { %>
+        <% if (birdWa) { %><a class="btn btn-wa btn-lg btn-block" href="<%= birdWa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> WhatsApp Wasim about <%= b.name %></a><% } %>
+        <a class="btn btn-primary btn-lg btn-block" href="/contact?bird=<%= b.id %>#contact">Ask About This Bird</a>
+        <% if (birdMail) { %><a class="btn btn-outline btn-block" href="<%= birdMail %>"><%- icon('mail') %> Email Wasim</a><% } %>
+        <% if (b.status === 'reserved') { %><p class="cta-note">This bird is currently reserved. You're welcome to ask about similar birds or upcoming availability.</p><% } %>
+        <% if (b.status === 'coming_soon') { %><p class="cta-note">This bird is not ready to go home yet. Contact Wasim to ask about it.</p><% } %>
+      <% } else { %>
+        <p class="cta-note"><%= b.name %> has already gone to a new home. Take a look at the birds available now, or ask Wasim about upcoming babies.</p>
+        <a class="btn btn-primary btn-lg btn-block" href="/birds">See Available Birds</a>
+        <a class="btn btn-outline btn-block" href="/contact<%= b.species_slug ? '?species=' + b.species_slug : '' %>#contact">Ask About Upcoming Birds</a>
+      <% } %>
+    </div>
+    <p class="summary-loc"><%- icon('pin') %> <%= settings.location %></p>
+  </div>
+</section>
+
+<% if (b.description || b.personality || b.included_items || pickup || shipping) { %>
+<section class="section section-tight">
+  <div class="wrap bird-info">
+    <div class="bird-info-main">
+      <% if (b.description) { %>
+      <div class="info-block">
+        <h2 class="info-title">About <%= b.name %></h2>
+        <div class="prose prose-lg"><%- textToHtml(b.description) %></div>
+      </div>
+      <% } %>
+      <% if (b.personality) { %>
+      <div class="info-block">
+        <h2 class="info-title">Personality</h2>
+        <div class="prose"><%- textToHtml(b.personality) %></div>
+      </div>
+      <% } %>
+    </div>
+    <% if (b.included_items || pickup || shipping) { %>
+    <aside class="bird-info-side">
+      <% if (b.included_items) { %>
+      <div class="info-card"><h2 class="info-card-title"><%- icon('gift') %> What's included</h2><div class="prose"><%- textToHtml(b.included_items) %></div></div>
+      <% } %>
+      <% if (pickup) { %>
+      <div class="info-card"><h2 class="info-card-title"><%- icon('home') %> Pickup</h2><div class="prose"><%- textToHtml(pickup) %></div></div>
+      <% } %>
+      <% if (shipping) { %>
+      <div class="info-card"><h2 class="info-card-title"><%- icon('truck') %> Shipping</h2><div class="prose"><%- textToHtml(shipping) %></div></div>
+      <% } %>
+    </aside>
+    <% } %>
+  </div>
+</section>
+<% } %>
+
+<% if (related.length) { %>
+<section class="section section-cream">
+  <div class="wrap">
+    <div class="section-head section-head-split">
+      <div>
+        <p class="eyebrow">You may also like</p>
+        <h2 class="section-title">More <%= b.species_name %></h2>
+      </div>
+      <a class="link-arrow" href="/birds?species=<%= b.species_slug %>">See all <%- icon('arrow-right') %></a>
+    </div>
+    <div class="bird-grid">
+      <% for (const bird of related) { %><%- include('partials/bird-card', { bird }) %><% } %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section class="cta-band">
+  <div class="wrap cta-band-inner">
+    <div>
+      <h2 class="cta-band-title">Have a question about <%= b.name %>?</h2>
+      <p>Wasim is happy to talk about personality, care and whether this bird is the right fit for your family.</p>
+    </div>
+    <div class="cta-band-actions">
+      <% if (birdWa && !sold) { %><a class="btn btn-wa btn-lg" href="<%= birdWa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> WhatsApp</a><% } %>
+      <a class="btn btn-light btn-lg" href="/contact?bird=<%= b.id %>#contact">Send a Message</a>
+    </div>
+  </div>
+</section>
+<%- include('partials/foot', { mobileBar }) %>

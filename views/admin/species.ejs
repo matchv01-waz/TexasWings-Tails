@@ -1,0 +1,29 @@
+<%- include('top') %>
+<div class="page-head">
+  <div>
+    <h1>Species</h1>
+    <p class="muted">Each species has its own page on the website. Drag to change the order they appear in.</p>
+  </div>
+  <a class="btn btn-primary" href="/admin/species/new"><%- icon('plus') %> Add a species</a>
+</div>
+<ul class="sortable-list" data-sortable data-order-url="/admin/species/order">
+  <% species.forEach((sp, i) => { %>
+  <li class="sort-row" draggable="true" data-id="<%= sp.id %>">
+    <span class="drag-handle" aria-hidden="true"><%- icon('grip') %></span>
+    <span class="sort-thumb" style="background:<%= sp.accent %>"><% if (sp.cover) { %><%- imgTag(sp.cover, { alt: '', sizes: '64px' }) %><% } %></span>
+    <a class="sort-main" href="/admin/species/<%= sp.id %>">
+      <strong><%= sp.name %></strong>
+      <small class="muted"><%= sp.bird_count %> bird<%= sp.bird_count === 1 ? '' : 's' %><%= sp.cover ? '' : ' · no photo yet' %></small>
+    </a>
+    <% if (!sp.published) { %><span class="pill">Hidden</span><% } %>
+    <div class="row-actions">
+      <form method="post" action="/admin/species/order"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="id" value="<%= sp.id %>"><input type="hidden" name="dir" value="up">
+        <button class="icon-btn" type="submit" aria-label="Move <%= sp.name %> up" <%- i === 0 ? 'disabled' : '' %>><%- icon('up') %></button></form>
+      <form method="post" action="/admin/species/order"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="id" value="<%= sp.id %>"><input type="hidden" name="dir" value="down">
+        <button class="icon-btn" type="submit" aria-label="Move <%= sp.name %> down" <%- i === species.length - 1 ? 'disabled' : '' %>><%- icon('down') %></button></form>
+      <a class="btn btn-outline btn-sm" href="/admin/species/<%= sp.id %>"><%- icon('edit') %> Edit</a>
+    </div>
+  </li>
+  <% }) %>
+</ul>
+<%- include('bottom') %>

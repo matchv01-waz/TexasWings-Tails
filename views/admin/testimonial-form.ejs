@@ -1,0 +1,30 @@
+<%- include('top') %>
+<% const isNew = !t.id; const v = (k) => (t[k] === null || t[k] === undefined ? '' : t[k]); %>
+<div class="page-head">
+  <div>
+    <a class="back" href="/admin/testimonials"><%- icon('arrow-left') %> All testimonials</a>
+    <h1><%= isNew ? 'Add a testimonial' : 'Edit testimonial' %></h1>
+  </div>
+</div>
+<% if (errors.length) { %><div class="toast toast-err" role="alert"><% for (const e of errors) { %><div><%= e %></div><% } %></div><% } %>
+<div class="notice"><%- icon('help') %><p>Only add real reviews from your customers, and ask their permission before publishing their name or photo.</p></div>
+<form method="post" action="<%= isNew ? '/admin/testimonials' : '/admin/testimonials/' + t.id %>" enctype="multipart/form-data" class="card narrow-card stack" data-dirty-check>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="form-grid">
+    <div class="field"><label for="name">Customer name <span class="req">*</span></label><input id="name" name="name" value="<%= v('name') %>" required maxlength="100" placeholder="e.g. Sarah M."></div>
+    <div class="field"><label for="location">Location <span class="optional">(optional)</span></label><input id="location" name="location" value="<%= v('location') %>" maxlength="100" placeholder="e.g. Plano, TX"></div>
+    <div class="field"><label for="review_date">Date</label><input id="review_date" name="review_date" type="date" value="<%= v('review_date') %>"></div>
+  </div>
+  <div class="field"><label for="review">Review <span class="req">*</span></label><textarea id="review" name="review" rows="6" required><%= v('review') %></textarea></div>
+  <div class="field">
+    <span class="label">Photo <span class="optional">(optional)</span></span>
+    <% if (t.image) { %><div class="current-image current-image-sm"><%- imgTag(t.image, { alt: '', sizes: '160px' }) %></div>
+    <label class="check-row"><input type="checkbox" name="remove_photo" value="1"><span>Remove photo</span></label><% } %>
+    <label class="dropzone-label dropzone-sm"><%- icon('upload') %><strong><%= t.image ? 'Replace photo' : 'Choose a photo' %></strong><span>e.g. the family with their bird</span><input type="file" name="photo" accept="image/*" data-preview></label>
+    <div class="preview-grid" data-preview-grid></div>
+  </div>
+  <label class="check-row"><input type="checkbox" name="featured" value="1" <%- t.featured ? 'checked' : '' %>><span><strong>Featured</strong><small>Show on the homepage</small></span></label>
+  <label class="check-row"><input type="checkbox" name="published" value="1" <%- t.published ? 'checked' : '' %>><span><strong>Show on website</strong></span></label>
+  <button class="btn btn-primary btn-lg" type="submit"><%- icon('check') %> Save</button>
+</form>
+<%- include('bottom') %>

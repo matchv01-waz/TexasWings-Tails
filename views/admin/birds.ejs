@@ -1,0 +1,66 @@
+<%- include('top') %>
+<div class="page-head">
+  <div>
+    <h1>Birds</h1>
+    <p class="muted">Add birds, change their status with one tap, and keep prices up to date.</p>
+  </div>
+  <a class="btn btn-primary btn-lg" href="/admin/birds/new"><%- icon('plus') %> Add a bird</a>
+</div>
+
+<div class="toolbar">
+  <nav class="tabs" aria-label="Filter by status">
+    <a href="/admin/birds" <%- status === 'all' ? 'aria-current="true"' : '' %>>All <span><%= total %></span></a>
+    <% for (const [key, label] of Object.entries(STATUSES)) { %>
+    <a href="/admin/birds?status=<%= key %>" <%- status === key ? 'aria-current="true"' : '' %>><%= label %> <span><%= counts[key] || 0 %></span></a>
+    <% } %>
+  </nav>
+  <form class="search" method="get" action="/admin/birds">
+    <% if (status !== 'all') { %><input type="hidden" name="status" value="<%= status %>"><% } %>
+    <%- icon('search') %><input type="search" name="q" value="<%= q %>" placeholder="Search birds…" aria-label="Search birds">
+  </form>
+</div>
+
+<% if (!birds.length) { %>
+<div class="card empty">
+  <%- icon('feather', 'empty-icon') %>
+  <h2><%= total ? 'No birds match' : 'No birds yet' %></h2>
+  <p class="muted"><%= total ? 'Try a different tab or search.' : 'Add your first bird and it will appear on the website right away.' %></p>
+  <a class="btn btn-primary" href="/admin/birds/new"><%- icon('plus') %> Add a bird</a>
+</div>
+<% } else { %>
+<ul class="bird-rows">
+  <% for (const b of birds) { const ret = '/admin/birds' + (status !== 'all' ? '?status=' + status : ''); %>
+  <li class="bird-row">
+    <a class="bird-row-thumb" href="/admin/birds/<%= b.id %>">
+      <% if (b.cover) { %><%- imgTag(b.cover, { alt: '', sizes: '96px' }) %><% } else { %><span class="no-photo"><%- icon('image') %></span><% } %>
+    </a>
+    <div class="bird-row-info">
+      <a class="bird-row-name" href="/admin/birds/<%= b.id %>"><%= b.name %></a>
+      <% if (b.featured) { %><span class="pill pill-gold">Featured</span><% } %>
+      <p class="muted"><%= [b.species_singular, b.mutation, b.sex !== 'unknown' ? SEXES[b.sex] : ''].filter(Boolean).join(' · ') || 'No details yet' %></p>
+      <p class="bird-row-price"><%= b.price !== null ? formatPrice(b.price) : 'No price' %> <small class="muted">· <%= b.photo_count %> photo<%= b.photo_count === 1 ? '' : 's' %></small></p>
+    </div>
+    <form class="status-switch" method="post" action="/admin/birds/<%= b.id %>/status" aria-label="Status for <%= b.name %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="return" value="<%= ret %>">
+      <% for (const [key, label] of Object.entries(STATUSES)) { %>
+      <button type="submit" name="status" value="<%= key %>" class="st st-<%= key %>" <%- b.status === key ? 'aria-pressed="true"' : 'aria-pressed="false"' %>><%= label %></button>
+      <% } %>
+    </form>
+    <div class="row-actions">
+      <a class="btn btn-outline btn-sm" href="/admin/birds/<%= b.id %>"><%- icon('edit') %> Edit</a>
+      <a class="icon-btn" href="<%= b.url %>" target="_blank" rel="noopener" title="View on website" aria-label="View <%= b.name %> on website"><%- icon('eye') %></a>
+      <form method="post" action="/admin/birds/<%= b.id %>/duplicate">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="icon-btn" type="submit" title="Duplicate" aria-label="Duplicate <%= b.name %>"><%- icon('copy') %></button>
+      </form>
+      <form method="post" action="/admin/birds/<%= b.id %>/delete" data-confirm="Delete <%= b.name %>? This cannot be undone.">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="icon-btn danger" type="submit" title="Delete" aria-label="Delete <%= b.name %>"><%- icon('trash') %></button>
+      </form>
+    </div>
+  </li>
+  <% } %>
+</ul>
+<% } %>
+<%- include('bottom') %>

@@ -1,0 +1,44 @@
+<%
+  const b = bird;
+  const chips = [];
+  if (b.sex && b.sex !== 'unknown') chips.push(SEXES[b.sex]);
+  const age = ageText(b); if (age) chips.push(age);
+  if (b.dna_status) chips.push(b.dna_status);
+  if (b.weaning_status) chips.push(b.weaning_status);
+  const showPrice = settings.show_prices === '1' && b.price !== null && b.status !== 'sold';
+  const cardWa = b.status !== 'sold' ? waLink(settings, `Hi Wasim, I'm interested in ${b.name}${b.species_singular ? ` (${b.species_singular})` : ''}: ${siteUrl}${b.url}`) : '';
+  const altText = (b.cover && b.cover.alt) || [b.name, b.mutation, b.species_singular].filter(Boolean).join(', ');
+%>
+<article class="bird-card status-<%= b.status %>">
+  <a class="bird-card-media" href="<%= b.url %>" tabindex="-1" aria-hidden="true">
+    <% if (b.cover) { %><%- imgTag(b.cover, { alt: altText, sizes: '(min-width: 1200px) 370px, (min-width: 720px) 46vw, 92vw' }) %>
+    <% } else { %><%- include('placeholder', { accent: b.species_accent }) %><% } %>
+    <span class="badge badge-<%= b.status %>"><%= STATUSES[b.status] %></span>
+    <% if (b.photo_count > 1) { %><span class="photo-count"><%- icon('camera') %><%= b.photo_count %></span><% } %>
+  </a>
+  <div class="bird-card-body">
+    <p class="eyebrow"><%= b.species_singular || 'Companion bird' %></p>
+    <h3 class="bird-card-title"><a href="<%= b.url %>"><%= b.name %></a></h3>
+    <% if (b.mutation) { %><p class="bird-card-mutation"><%= b.mutation %></p><% } %>
+    <% if (chips.length) { %>
+    <ul class="chips" aria-label="Details"><% for (const c of chips) { %><li><%= c %></li><% } %></ul>
+    <% } %>
+    <% if (b.description) { %><p class="bird-card-desc"><%= excerpt(b.description, 110) %></p><% } %>
+    <div class="bird-card-foot">
+      <p class="bird-card-price">
+        <% if (b.status === 'sold') { %><span class="price-muted">Found a home</span>
+        <% } else if (showPrice) { %><span class="price"><%= formatPrice(b.price) %></span><% if (b.price_note) { %> <span class="price-note"><%= b.price_note %></span><% } %>
+        <% } else { %><span class="price-muted">Contact for price</span><% } %>
+      </p>
+    </div>
+    <div class="bird-card-actions">
+      <div class="bird-card-row">
+        <a class="btn btn-primary" href="<%= b.url %>">View Details<span class="sr-only"> for <%= b.name %></span></a>
+        <% if (cardWa) { %><a class="btn btn-wa btn-square" href="<%= cardWa %>" target="_blank" rel="noopener" aria-label="WhatsApp Wasim about <%= b.name %>"><%- icon('whatsapp') %></a><% } %>
+      </div>
+      <% if (b.status !== 'sold') { %>
+      <a class="btn btn-outline btn-block" href="/contact?bird=<%= b.id %>#contact">Ask About This Bird</a>
+      <% } %>
+    </div>
+  </div>
+</article>

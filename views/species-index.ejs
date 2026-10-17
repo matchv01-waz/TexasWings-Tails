@@ -1,0 +1,28 @@
+<%- include('partials/head') %>
+<section class="page-hero">
+  <div class="wrap">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">Our Birds</span></nav>
+    <h1 class="page-title"><%= settings.species_heading %></h1>
+    <p class="lead"><%= settings.species_intro %> Each species has its own personality — explore them below and ask Wasim which one fits your home.</p>
+  </div>
+</section>
+<section class="section section-tight">
+  <div class="wrap">
+    <div class="species-grid">
+      <% for (const sp of species) { %><%- include('partials/species-card', { sp }) %><% } %>
+    </div>
+  </div>
+</section>
+<section class="cta-band">
+  <div class="wrap cta-band-inner">
+    <div>
+      <h2 class="cta-band-title">Not sure which species is right for you?</h2>
+      <p>Tell Wasim a little about your home and experience to get help finding a good match.</p>
+    </div>
+    <div class="cta-band-actions">
+      <% if (wa) { %><a class="btn btn-wa btn-lg" href="<%= wa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> WhatsApp</a><% } %>
+      <a class="btn btn-light btn-lg" href="/contact#contact">Ask Wasim</a>
+    </div>
+  </div>
+</section>
+<%- include('partials/foot') %>

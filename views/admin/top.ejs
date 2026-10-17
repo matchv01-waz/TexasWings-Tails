@@ -1,0 +1,63 @@
+<%
+  const navItems = [
+    ['/admin', 'home', 'Dashboard', (p) => p === '/'],
+    ['/admin/birds', 'feather', 'Birds', (p) => p.startsWith('/birds')],
+    ['/admin/species', 'leaf', 'Species', (p) => p.startsWith('/species')],
+    ['/admin/gallery', 'camera', 'Gallery', (p) => p.startsWith('/gallery')],
+    ['/admin/inquiries', 'inbox', 'Messages', (p) => p.startsWith('/inquiries'), locals.unread],
+    null,
+    ['/admin/content/home', 'layout', 'Homepage', (p) => p === '/content/home'],
+    ['/admin/content/about', 'users', 'About section', (p) => p === '/content/about'],
+    ['/admin/faqs', 'help', 'FAQs', (p) => p.startsWith('/faqs')],
+    ['/admin/testimonials', 'chat', 'Testimonials', (p) => p.startsWith('/testimonials')],
+    ['/admin/content/contact', 'mail', 'Contact info', (p) => p === '/content/contact'],
+    ['/admin/content/settings', 'sliders', 'Website settings', (p) => p === '/content/settings'],
+    ['/admin/account', 'lock', 'Your account', (p) => p.startsWith('/account')],
+  ];
+%><!doctype html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="csrf-token" content="<%= csrfToken %>">
+<title><%= title %> · Admin · <%= settings.site_name %></title>
+<link rel="icon" href="/static/img/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="/static/img/brand/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/static/img/brand/apple-touch-icon.png">
+<link rel="stylesheet" href="/static/css/admin.css?v=<%= assetVersion %>">
+<script src="/static/js/admin.js?v=<%= assetVersion %>" defer></script>
+</head>
+<body class="admin">
+<%- include('../partials/icons') %>
+<%- include('icons') %>
+<div class="admin-shell">
+  <aside class="sidebar" id="sidebar">
+    <a class="sidebar-brand" href="/admin">
+      <span class="logo-badge"><img src="/static/img/brand/mark.png" alt="" width="26" height="32"></span>
+      <span><strong>Texas Wings &amp; Tails</strong><small>Admin</small></span>
+    </a>
+    <nav aria-label="Admin">
+      <ul>
+        <% for (const item of navItems) { if (!item) { %><li class="nav-sep" role="separator"></li><% continue; } const [href, ic, label, match, badge] = item; %>
+        <li><a href="<%= href %>" <%- match(adminPath) ? 'aria-current="page"' : '' %>><%- icon(ic) %><span><%= label %></span><% if (badge) { %><span class="nav-badge"><%= badge %></span><% } %></a></li>
+        <% } %>
+      </ul>
+    </nav>
+    <div class="sidebar-foot">
+      <a class="btn btn-outline btn-sm btn-block" href="/" target="_blank" rel="noopener"><%- icon('external') %> View website</a>
+      <form method="post" action="/admin/logout">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-ghost btn-sm btn-block" type="submit"><%- icon('logout') %> Log out</button>
+      </form>
+    </div>
+  </aside>
+  <div class="admin-main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" type="button" data-sidebar-toggle aria-controls="sidebar" aria-expanded="false"><%- icon('menu') %><span class="sr-only">Menu</span></button>
+      <span class="topbar-title"><%= title %></span>
+      <a class="icon-btn" href="/" target="_blank" rel="noopener" aria-label="View website"><%- icon('external') %></a>
+    </header>
+    <main class="admin-content">
+      <% if (msg) { %><div class="toast toast-ok" role="status" data-toast><%- icon('check') %> <%= msg %></div><% } %>
+      <% if (err) { %><div class="toast toast-err" role="alert"><%= err %></div><% } %>

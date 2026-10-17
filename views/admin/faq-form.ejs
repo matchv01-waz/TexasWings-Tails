@@ -1,0 +1,25 @@
+<%- include('top') %>
+<% const isNew = !faq.id; %>
+<div class="page-head">
+  <div>
+    <a class="back" href="/admin/faqs"><%- icon('arrow-left') %> All questions</a>
+    <h1><%= isNew ? 'Add a question' : 'Edit question' %></h1>
+  </div>
+  <% if (!isNew) { %>
+  <form method="post" action="/admin/faqs/<%= faq.id %>/delete" data-confirm="Delete this question?"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-danger-outline" type="submit"><%- icon('trash') %> Delete</button></form>
+  <% } %>
+</div>
+<% if (errors.length) { %><div class="toast toast-err" role="alert"><% for (const e of errors) { %><div><%= e %></div><% } %></div><% } %>
+<form method="post" action="<%= isNew ? '/admin/faqs' : '/admin/faqs/' + faq.id %>" class="card narrow-card stack" data-dirty-check>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="field"><label for="question">Question <span class="req">*</span></label><input id="question" name="question" value="<%= faq.question || '' %>" required maxlength="300"></div>
+  <div class="field">
+    <label for="answer">Answer</label>
+    <textarea id="answer" name="answer" rows="8"><%= faq.answer || '' %></textarea>
+    <p class="help">Leave an empty line between paragraphs. Start lines with "- " for a bullet list. A question without an answer is never shown.</p>
+  </div>
+  <label class="check-row"><input type="checkbox" name="published" value="1" <%- faq.published ? 'checked' : '' %>><span><strong>Show on website</strong></span></label>
+  <button class="btn btn-primary btn-lg" type="submit"><%- icon('check') %> Save</button>
+</form>
+<%- include('bottom') %>

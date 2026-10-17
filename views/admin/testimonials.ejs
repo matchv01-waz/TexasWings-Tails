@@ -1,0 +1,36 @@
+<%- include('top') %>
+<div class="page-head">
+  <div>
+    <h1>Testimonials</h1>
+    <p class="muted">Kind words from real customers. Featured reviews are shown on the homepage.</p>
+  </div>
+  <a class="btn btn-primary" href="/admin/testimonials/new"><%- icon('plus') %> Add a testimonial</a>
+</div>
+<% if (!items.length) { %>
+<div class="card empty">
+  <%- icon('chat', 'empty-icon') %>
+  <h2>No testimonials yet</h2>
+  <p class="muted">When a family sends you a kind message, add it here (with their permission). The testimonials section stays hidden on the website until you add one.</p>
+  <a class="btn btn-primary" href="/admin/testimonials/new"><%- icon('plus') %> Add a testimonial</a>
+</div>
+<% } else { %>
+<ul class="list list-cards">
+  <% for (const t of items) { %>
+  <li class="card list-card">
+    <div>
+      <strong><%= t.name %></strong>
+      <% if (t.featured) { %><span class="pill pill-gold">Featured</span><% } %>
+      <% if (!t.published) { %><span class="pill">Hidden</span><% } %>
+      <p class="muted"><%= excerpt(t.review, 180) %></p>
+      <small class="muted"><%= [t.location, formatDate(t.review_date)].filter(Boolean).join(' · ') %></small>
+    </div>
+    <div class="row-actions">
+      <a class="btn btn-outline btn-sm" href="/admin/testimonials/<%= t.id %>"><%- icon('edit') %> Edit</a>
+      <form method="post" action="/admin/testimonials/<%= t.id %>/delete" data-confirm="Delete this testimonial?"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="icon-btn danger" type="submit" aria-label="Delete"><%- icon('trash') %></button></form>
+    </div>
+  </li>
+  <% } %>
+</ul>
+<% } %>
+<%- include('bottom') %>

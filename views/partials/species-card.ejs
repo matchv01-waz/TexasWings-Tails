@@ -1,0 +1,12 @@
+<a class="species-card" href="<%= sp.url %>">
+  <div class="species-card-media">
+    <% if (sp.cover) { %><%- imgTag(sp.cover, { alt: sp.cover.alt || sp.singular || sp.name, sizes: '(min-width: 1100px) 360px, (min-width: 640px) 46vw, 88vw' }) %>
+    <% } else { %><%- include('placeholder', { accent: sp.accent }) %><% } %>
+  </div>
+  <div class="species-card-body">
+    <% if (sp.open_count) { %><span class="species-count"><%= sp.open_count %> available</span><% } %>
+    <h3 class="species-card-title"><%= sp.name %></h3>
+    <% if (sp.tagline) { %><p><%= sp.tagline %></p><% } %>
+    <span class="species-card-link">Discover <%- icon('arrow-right') %></span>
+  </div>
+</a>

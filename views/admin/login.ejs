@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Log in · <%= settings.site_name %></title>
+<link rel="icon" href="/static/img/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="/static/img/brand/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/static/img/brand/apple-touch-icon.png">
+<link rel="stylesheet" href="/static/css/admin.css?v=<%= assetVersion %>">
+</head>
+<body class="login-page">
+<main class="login-card">
+  <img class="login-mark" src="/static/img/brand/mark.png" alt="" width="58" height="72">
+  <h1>Welcome back</h1>
+  <p class="muted">Log in to manage <%= settings.site_name %>.</p>
+  <% if (noAdmins) { %>
+  <div class="toast toast-err">No admin account exists yet. Create one from the command line with <code>npm run create-admin</code> (see the README).</div>
+  <% } %>
+  <% if (error) { %><div class="toast toast-err" role="alert"><%= error %></div><% } %>
+  <form method="post" action="/admin/login" class="stack">
+    <input type="hidden" name="next" value="<%= next %>">
+    <div class="field">
+      <label for="username">Username</label>
+      <input id="username" name="username" value="<%= username %>" autocomplete="username" autocapitalize="none" required autofocus>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+    </div>
+    <button class="btn btn-primary btn-lg btn-block" type="submit">Log in</button>
+  </form>
+  <a class="back-link" href="/">← Back to the website</a>
+</main>
+</body>
+</html>

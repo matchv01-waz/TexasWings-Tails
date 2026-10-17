@@ -1,0 +1,12 @@
+<div class="testimonial-grid">
+  <% for (const t of testimonials) { %>
+  <figure class="testimonial">
+    <span class="testimonial-mark" aria-hidden="true">&ldquo;</span>
+    <blockquote><%- textToHtml(t.review) %></blockquote>
+    <figcaption>
+      <% if (t.image) { %><%- imgTag(t.image, { alt: `${t.name} with their bird`, sizes: '56px', cls: 'testimonial-photo' }) %><% } %>
+      <span><strong><%= t.name %></strong><% if (t.location || t.review_date) { %><small><%= [t.location, formatDate(t.review_date, { month: 'long', year: 'numeric' })].filter(Boolean).join(' · ') %></small><% } %></span>
+    </figcaption>
+  </figure>
+  <% } %>
+</div>

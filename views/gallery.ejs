@@ -1,0 +1,32 @@
+<%- include('partials/head') %>
+<section class="page-hero">
+  <div class="wrap">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">Gallery</span></nav>
+    <h1 class="page-title"><%= settings.gallery_heading %></h1>
+    <p class="lead"><%= settings.gallery_intro %></p>
+  </div>
+</section>
+<section class="section section-tight">
+  <div class="wrap">
+    <nav class="filter-chips" aria-label="Gallery categories">
+      <a href="/gallery" <%- !category ? 'aria-current="true"' : '' %>>All photos</a>
+      <% for (const c of settings.galleryCategories) { %>
+      <a href="/gallery?category=<%= encodeURIComponent(c) %>" <%- category === c ? 'aria-current="true"' : '' %>><%= c %></a>
+      <% } %>
+    </nav>
+    <% if (items.length) { %>
+      <%- include('partials/masonry', { items }) %>
+    <% } else { %>
+    <div class="empty-state">
+      <div class="empty-art" aria-hidden="true"><img src="/static/img/brand/parrot-silhouette.png" alt="" width="513" height="640"></div>
+      <h2 class="empty-title"><%= category ? `No ${category.toLowerCase()} photos yet` : 'Photos coming soon' %></h2>
+      <p>New photos from the aviary are added regularly. <%= category ? 'Try another category or check back soon.' : 'Check back soon.' %></p>
+      <div class="empty-actions">
+        <% if (category) { %><a class="btn btn-outline" href="/gallery">View all photos</a><% } %>
+        <a class="btn btn-primary" href="/birds">See Available Birds</a>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</section>
+<%- include('partials/foot') %>

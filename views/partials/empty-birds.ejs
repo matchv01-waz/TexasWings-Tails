@@ -1,0 +1,10 @@
+<div class="empty-state">
+  <div class="empty-art" aria-hidden="true"><img src="/static/img/brand/parrot-silhouette.png" alt="" width="513" height="640" loading="lazy"></div>
+  <h3 class="empty-title"><%= locals.title || 'New babies may be coming soon' %></h3>
+  <p><%= locals.text || settings.empty_birds_text %></p>
+  <div class="empty-actions">
+    <% if (wa) { %><a class="btn btn-wa" href="<%= wa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> WhatsApp Wasim</a><% } %>
+    <a class="btn btn-primary" href="/contact<%= locals.speciesSlug ? '?species=' + speciesSlug : '' %>#contact">Ask About Upcoming Birds</a>
+    <% if (locals.clearLink) { %><a class="btn btn-outline" href="<%= clearLink %>">Clear filters</a><% } %>
+  </div>
+</div>

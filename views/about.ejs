@@ -1,0 +1,56 @@
+<%- include('partials/head') %>
+<div class="wrap">
+  <nav class="breadcrumbs breadcrumbs-top" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">About</span></nav>
+</div>
+<section class="section section-flush-top about-section">
+  <div class="wrap">
+    <%- include('partials/about-block', { headingTag: 'h1', fullPage: true }) %>
+  </div>
+</section>
+
+<% if (settings.about_extra_heading && settings.about_extra_body) { %>
+<section class="section section-cream">
+  <div class="wrap narrow">
+    <h2 class="section-title"><%= settings.about_extra_heading %></h2>
+    <div class="prose prose-lg"><%- textToHtml(settings.about_extra_body) %></div>
+  </div>
+</section>
+<% } %>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head section-head-center">
+      <p class="eyebrow">Species we raise</p>
+      <h2 class="section-title">Our Birds</h2>
+    </div>
+    <div class="species-grid species-grid-compact">
+      <% for (const sp of species) { %><%- include('partials/species-card', { sp }) %><% } %>
+    </div>
+  </div>
+</section>
+
+<% if (testimonials.length) { %>
+<section class="section section-forest">
+  <div class="wrap">
+    <div class="section-head section-head-center">
+      <p class="eyebrow eyebrow-gold">Testimonials</p>
+      <h2 class="section-title"><%= settings.testimonials_heading %></h2>
+    </div>
+    <%- include('partials/testimonials') %>
+  </div>
+</section>
+<% } %>
+
+<section class="cta-band">
+  <div class="wrap cta-band-inner">
+    <div>
+      <h2 class="cta-band-title"><%= settings.contact_heading %></h2>
+      <p><%= settings.contact_intro %></p>
+    </div>
+    <div class="cta-band-actions">
+      <% if (wa) { %><a class="btn btn-wa btn-lg" href="<%= wa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> WhatsApp Wasim</a><% } %>
+      <% if (mail) { %><a class="btn btn-light btn-lg" href="<%= mail %>"><%- icon('mail') %> Email Wasim</a><% } else { %><a class="btn btn-light btn-lg" href="/contact">Contact Wasim</a><% } %>
+    </div>
+  </div>
+</section>
+<%- include('partials/foot') %>

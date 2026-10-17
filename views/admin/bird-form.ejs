@@ -1,0 +1,165 @@
+<%- include('top') %>
+<%
+  const b = bird;
+  const isNew = !b.id;
+  const v = (k) => (b[k] === null || b[k] === undefined ? '' : b[k]);
+%>
+<div class="page-head">
+  <div>
+    <a class="back" href="/admin/birds"><%- icon('arrow-left') %> All birds</a>
+    <h1><%= isNew ? 'Add a bird' : b.name %></h1>
+  </div>
+  <% if (!isNew) { %>
+  <div class="head-actions">
+    <a class="btn btn-outline" href="<%= b.url %>" target="_blank" rel="noopener"><%- icon('eye') %> View on website</a>
+    <form method="post" action="/admin/birds/<%= b.id %>/duplicate"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-outline" type="submit"><%- icon('copy') %> Duplicate</button></form>
+    <form method="post" action="/admin/birds/<%= b.id %>/delete" data-confirm="Delete <%= b.name %>? This cannot be undone."><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-danger-outline" type="submit"><%- icon('trash') %> Delete</button></form>
+  </div>
+  <% } %>
+</div>
+
+<% if (errors.length) { %><div class="toast toast-err" role="alert"><% for (const e of errors) { %><div><%= e %></div><% } %></div><% } %>
+
+<% if (!isNew) { %><%- include('photo-manager', { base: 'birds', ownerId: b.id, photos: b.photos }) %><% } %>
+
+<form method="post" action="<%= isNew ? '/admin/birds' : '/admin/birds/' + b.id %>" enctype="multipart/form-data" class="edit-layout" data-dirty-check>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="edit-main">
+    <% if (isNew) { %>
+    <section class="card">
+      <h2 class="card-title">Photos</h2>
+      <label class="dropzone-label">
+        <%- icon('upload') %>
+        <strong>Tap to choose photos</strong>
+        <span>Choose several at once. The first one becomes the cover. You can add more later.</span>
+        <input type="file" name="photos" accept="image/*" multiple data-preview>
+      </label>
+      <div class="preview-grid" data-preview-grid></div>
+    </section>
+    <% } %>
+
+    <section class="card">
+      <h2 class="card-title">Basic details</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label for="name">Bird name <span class="req">*</span></label>
+          <input id="name" name="name" value="<%= v('name') %>" required maxlength="80" placeholder="e.g. Mango">
+        </div>
+        <div class="field">
+          <label for="species_id">Species</label>
+          <select id="species_id" name="species_id">
+            <option value="">Choose a species…</option>
+            <% for (const sp of species) { %><option value="<%= sp.id %>" <%- Number(b.species_id) === sp.id ? 'selected' : '' %>><%= sp.singular || sp.name %></option><% } %>
+          </select>
+        </div>
+        <div class="field">
+          <label for="mutation">Color / mutation</label>
+          <input id="mutation" name="mutation" value="<%= v('mutation') %>" list="mutation-list" maxlength="120" placeholder="e.g. Pineapple, Blue, Turquoise">
+          <datalist id="mutation-list"><% for (const mu of mutations) { %><option value="<%= mu %>"><% } %></datalist>
+        </div>
+        <fieldset class="field">
+          <legend>Sex</legend>
+          <div class="seg">
+            <% for (const [key, label] of Object.entries(SEXES)) { %>
+            <label><input type="radio" name="sex" value="<%= key %>" <%- (b.sex || 'unknown') === key ? 'checked' : '' %>><span><%= label %></span></label>
+            <% } %>
+          </div>
+        </fieldset>
+        <div class="field">
+          <label for="hatch_date">Hatch date</label>
+          <input id="hatch_date" name="hatch_date" type="date" value="<%= v('hatch_date') %>">
+          <p class="help">If filled in, the age is calculated automatically and stays up to date.</p>
+        </div>
+        <div class="field">
+          <label for="age">Age <span class="optional">(optional)</span></label>
+          <input id="age" name="age" value="<%= v('age') %>" maxlength="60" placeholder="e.g. 10 weeks, 2 years">
+          <p class="help">Only needed if there is no hatch date, or you want to write it your own way.</p>
+        </div>
+        <div class="field">
+          <label for="age_group">Age group (for the website filter)</label>
+          <select id="age_group" name="age_group">
+            <% for (const [key, label] of Object.entries(AGE_GROUPS)) { %><option value="<%= key %>" <%- (b.age_group || 'baby') === key ? 'selected' : '' %>><%= label %></option><% } %>
+          </select>
+          <p class="help">Worked out from the hatch date automatically when there is one.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">DNA &amp; weaning</h2>
+      <p class="help">Only enter what is true for this bird. Leave empty to hide it on the website.</p>
+      <div class="form-grid">
+        <div class="field">
+          <label for="dna_status">DNA status</label>
+          <input id="dna_status" name="dna_status" value="<%= v('dna_status') %>" list="dna-list" maxlength="80" placeholder="Choose or type…">
+          <datalist id="dna-list"><% for (const o of DNA_SUGGESTIONS) { %><option value="<%= o %>"><% } %></datalist>
+        </div>
+        <div class="field">
+          <label for="weaning_status">Weaning status</label>
+          <input id="weaning_status" name="weaning_status" value="<%= v('weaning_status') %>" list="wean-list" maxlength="80" placeholder="Choose or type…">
+          <datalist id="wean-list"><% for (const o of WEANING_SUGGESTIONS) { %><option value="<%= o %>"><% } %></datalist>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Description</h2>
+      <div class="stack">
+        <div class="field">
+          <label for="description">About this bird</label>
+          <textarea id="description" name="description" rows="6" placeholder="A few friendly sentences about this bird."><%= v('description') %></textarea>
+          <p class="help">Leave an empty line between paragraphs. Start lines with "- " to make a bullet list.</p>
+        </div>
+        <div class="field">
+          <label for="personality">Personality</label>
+          <textarea id="personality" name="personality" rows="4" placeholder="e.g. Loves head scratches, very curious, starting to say hello."><%= v('personality') %></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Going home</h2>
+      <p class="help">Leave empty to hide. Pickup and shipping use the default text from Website settings when empty.</p>
+      <div class="stack">
+        <div class="field">
+          <label for="included_items">What's included <span class="optional">(optional)</span></label>
+          <textarea id="included_items" name="included_items" rows="3"><%= v('included_items') %></textarea>
+        </div>
+        <div class="field">
+          <label for="pickup_info">Pickup information for this bird <span class="optional">(optional)</span></label>
+          <textarea id="pickup_info" name="pickup_info" rows="3" placeholder="<%= settings.default_pickup_info || 'Leave empty to hide' %>"><%= v('pickup_info') %></textarea>
+        </div>
+        <div class="field">
+          <label for="shipping_info">Shipping information for this bird <span class="optional">(optional)</span></label>
+          <textarea id="shipping_info" name="shipping_info" rows="3" placeholder="<%= settings.default_shipping_info || 'Only fill in if you offer shipping' %>"><%= v('shipping_info') %></textarea>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <aside class="edit-side">
+    <section class="card sticky-card">
+      <h2 class="card-title">Status</h2>
+      <div class="status-cards">
+        <% const statusHelp = { available: 'Ready to reserve', coming_soon: 'Not ready yet', reserved: 'Someone has reserved', sold: 'Gone home' }; %>
+        <% for (const [key, label] of Object.entries(STATUSES)) { %>
+        <label class="status-card st-<%= key %>"><input type="radio" name="status" value="<%= key %>" <%- (b.status || 'available') === key ? 'checked' : '' %>><span><strong><%= label %></strong><small><%= statusHelp[key] %></small></span></label>
+        <% } %>
+      </div>
+      <div class="field">
+        <label for="price">Price</label>
+        <div class="input-prefix"><span>$</span><input id="price" name="price" inputmode="decimal" value="<%= v('price') %>" placeholder="Leave empty for “Contact for price”"></div>
+      </div>
+      <div class="field">
+        <label for="price_note">Price note <span class="optional">(optional)</span></label>
+        <input id="price_note" name="price_note" value="<%= v('price_note') %>" maxlength="80" placeholder="e.g. includes starter food">
+      </div>
+      <label class="check-row"><input type="checkbox" name="featured" value="1" <%- b.featured ? 'checked' : '' %>><span><strong>Feature this bird</strong><small>Shown first on the homepage</small></span></label>
+      <button class="btn btn-primary btn-lg btn-block" type="submit"><%- icon('check') %> <%= isNew ? 'Add bird' : 'Save changes' %></button>
+      <% if (!isNew) { %><button class="btn btn-outline btn-block" type="submit" name="return" value="list">Save &amp; back to list</button><% } %>
+    </section>
+  </aside>
+</form>
+<%- include('bottom') %>

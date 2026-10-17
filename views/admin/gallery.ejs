@@ -1,0 +1,75 @@
+<%- include('top') %>
+<div class="page-head">
+  <div>
+    <h1>Gallery</h1>
+    <p class="muted"><%= total %> photo<%= total === 1 ? '' : 's' %>. Featured photos are shown on the homepage.</p>
+  </div>
+  <a class="btn btn-outline" href="/gallery" target="_blank" rel="noopener"><%- icon('eye') %> View gallery</a>
+</div>
+
+<section class="card">
+  <h2 class="card-title">Upload photos</h2>
+  <form method="post" action="/admin/gallery/upload" enctype="multipart/form-data" class="upload-panel" data-upload-form>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="return_category" value="<%= category %>">
+    <label class="dropzone-label">
+      <%- icon('upload') %>
+      <strong>Tap to choose photos</strong>
+      <span>Choose as many as you like</span>
+      <input type="file" name="photos" accept="image/*" multiple required data-preview>
+    </label>
+    <div class="preview-grid" data-preview-grid></div>
+    <div class="form-grid form-grid-3">
+      <div class="field">
+        <label for="up-category">Category</label>
+        <select id="up-category" name="category">
+          <option value="">No category</option>
+          <% for (const c of categories) { %><option <%- c === category ? 'selected' : '' %>><%= c %></option><% } %>
+        </select>
+      </div>
+      <div class="field">
+        <label for="up-caption">Caption <span class="optional">(optional)</span></label>
+        <input id="up-caption" name="caption" maxlength="200" placeholder="Used for every photo in this upload">
+      </div>
+      <label class="check-row check-row-inline"><input type="checkbox" name="featured" value="1"><span><strong>Featured</strong><small>Show on homepage</small></span></label>
+    </div>
+    <p class="upload-status" data-upload-status hidden>Uploading and optimizing photos… please wait.</p>
+    <button class="btn btn-primary btn-lg" type="submit"><%- icon('upload') %> Upload photos</button>
+  </form>
+</section>
+
+<nav class="tabs tabs-scroll" aria-label="Filter by category">
+  <a href="/admin/gallery" <%- !category ? 'aria-current="true"' : '' %>>All</a>
+  <% for (const c of categories) { %><a href="/admin/gallery?category=<%= encodeURIComponent(c) %>" <%- category === c ? 'aria-current="true"' : '' %>><%= c %></a><% } %>
+</nav>
+
+<% if (!items.length) { %>
+<div class="card empty"><%- icon('camera', 'empty-icon') %><h2>No photos here yet</h2><p class="muted">Upload photos above to get started.</p></div>
+<% } else { %>
+<form method="post" action="/admin/gallery/save" data-dirty-check>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <input type="hidden" name="return_category" value="<%= category %>">
+  <p class="help"><%= category ? 'Drag to reorder is available on the “All” tab.' : 'Drag photos to change their order on the website.' %></p>
+  <ul class="gallery-admin" <%- category ? '' : 'data-sortable data-order-url="/admin/gallery/order"' %>>
+    <% for (const g of items) { %>
+    <li class="gallery-tile" <%- category ? '' : 'draggable="true"' %> data-id="<%= g.id %>">
+      <div class="photo-img"><%- imgTag(g.image, { alt: g.caption || '', sizes: '240px' }) %><% if (!category) { %><span class="drag-handle" aria-hidden="true"><%- icon('grip') %></span><% } %><% if (g.featured) { %><span class="cover-pill">Featured</span><% } %></div>
+      <div class="gallery-fields">
+        <input name="items[g<%= g.id %>][caption]" value="<%= g.caption %>" placeholder="Caption" aria-label="Caption" maxlength="200">
+        <select name="items[g<%= g.id %>][category]" aria-label="Category">
+          <option value="">No category</option>
+          <% for (const c of categories) { %><option <%- c === g.category ? 'selected' : '' %>><%= c %></option><% } %>
+          <% if (g.category && !categories.includes(g.category)) { %><option selected><%= g.category %></option><% } %>
+        </select>
+        <div class="gallery-tile-foot">
+          <label class="check-mini"><input type="checkbox" name="items[g<%= g.id %>][featured]" value="1" <%- g.featured ? 'checked' : '' %>> Featured</label>
+          <button class="icon-btn danger" type="submit" formaction="/admin/gallery/<%= g.id %>/delete" data-confirm-click="Delete this photo? Unsaved changes on this page will be lost." aria-label="Delete photo"><%- icon('trash') %></button>
+        </div>
+      </div>
+    </li>
+    <% } %>
+  </ul>
+  <div class="save-bar"><button class="btn btn-primary btn-lg" type="submit"><%- icon('check') %> Save captions &amp; categories</button></div>
+</form>
+<% } %>
+<%- include('bottom') %>

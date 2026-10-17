@@ -1,0 +1,81 @@
+<%
+  const pageUrl = siteUrl + (seo.path || currentPath);
+  const ogImage = seo.image || defaultOgImage;
+  const nav = [
+    ['/birds', 'Available Birds'],
+    ['/species', 'Our Birds'],
+    ['/gallery', 'Gallery'],
+    ['/about', 'About'],
+    ['/faq', 'FAQ'],
+  ];
+%><!doctype html>
+<html lang="en-US" class="no-js">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.className='js'</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title><%= seo.title %></title>
+<% if (seo.description) { %><meta name="description" content="<%= seo.description %>">
+<% } %><% if (seo.noindex) { %><meta name="robots" content="noindex, follow">
+<% } %><link rel="canonical" href="<%= pageUrl %>">
+<meta property="og:type" content="<%= seo.type === 'product' ? 'product' : 'website' %>">
+<meta property="og:site_name" content="<%= settings.site_name %>">
+<meta property="og:title" content="<%= seo.title %>">
+<% if (seo.description) { %><meta property="og:description" content="<%= seo.description %>">
+<% } %><meta property="og:url" content="<%= pageUrl %>">
+<meta property="og:locale" content="en_US">
+<% if (ogImage) { %><meta property="og:image" content="<%= absUrl(siteUrl, imgSrc(ogImage, 1600)) %>">
+<meta property="og:image:width" content="<%= ogImage.width %>">
+<meta property="og:image:height" content="<%= ogImage.height %>">
+<meta name="twitter:card" content="summary_large_image">
+<% } else { %><meta property="og:image" content="<%= siteUrl %>/static/img/brand/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<% } %><meta name="theme-color" content="#1f3b2d">
+<link rel="icon" href="/static/img/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="/static/img/brand/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/static/img/brand/apple-touch-icon.png">
+<link rel="preload" href="/fonts/fraunces/fraunces-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/dm-sans/dm-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<% if (seo.preload) { %><link rel="preload" as="image" imagesrcset="<%= imgSrcset(seo.preload) %>" imagesizes="<%= seo.preloadSizes || '100vw' %>" fetchpriority="high">
+<% } %><link rel="stylesheet" href="/static/css/site.css?v=<%= assetVersion %>">
+<script src="/static/js/site.js?v=<%= assetVersion %>" defer></script>
+<% for (const ld of (seo.jsonLd || [])) { %><script type="application/ld+json"><%- jsonLd(ld) %></script>
+<% } %></head>
+<body class="<%= locals.bodyClass || '' %>">
+<%- include('icons') %>
+<a class="skip-link" href="#main">Skip to content</a>
+<% if (admin) { %>
+<div class="admin-bar"><span>Signed in as <%= admin.username %></span><a href="/admin">Dashboard</a><% if (locals.editLink) { %><a href="<%= editLink %>">Edit this page</a><% } %></div>
+<% } %>
+<header class="site-header" data-header>
+  <div class="wrap header-inner">
+    <a class="logo" href="/" aria-label="<%= settings.site_name %> — home">
+      <span class="logo-mark" aria-hidden="true"><img src="/static/img/brand/mark.png" alt="" width="37" height="46"></span>
+      <span class="logo-text"><span class="logo-name">Texas Wings <em>&amp;</em> Tails</span><span class="logo-sub">Dallas, Texas Aviary</span></span>
+    </a>
+    <nav class="main-nav" id="main-nav" aria-label="Main">
+      <ul class="nav-list">
+        <li class="nav-home"><a href="/" <%- currentPath === '/' ? 'aria-current="page"' : '' %>>Home</a></li>
+        <% for (const [href, label] of nav) { const active = currentPath === href || currentPath.startsWith(href + '/'); %>
+        <li><a href="<%= href %>" <%- active ? 'aria-current="page"' : '' %>><%= label %></a></li>
+        <% } %>
+        <li><a href="/contact" <%- currentPath === '/contact' ? 'aria-current="page"' : '' %> class="nav-contact-link">Contact</a></li>
+      </ul>
+      <div class="nav-panel-extras">
+        <% if (wa) { %><a class="btn btn-wa btn-block" href="<%= wa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> WhatsApp Wasim</a><% } %>
+        <% if (mail) { %><a class="btn btn-outline btn-block" href="<%= mail %>"><%- icon('mail') %> Email Wasim</a><% } %>
+        <p class="nav-panel-loc"><%- icon('pin') %> <%= settings.location %></p>
+      </div>
+    </nav>
+    <div class="header-actions">
+      <a class="btn btn-primary btn-sm header-cta" href="/contact">Contact Wasim</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-nav" data-nav-toggle>
+        <span class="nav-toggle-open"><%- icon('menu') %></span><span class="nav-toggle-close"><%- icon('close') %></span>
+        <span class="sr-only">Menu</span>
+      </button>
+    </div>
+  </div>
+</header>
+<main id="main">

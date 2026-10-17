@@ -1,0 +1,18 @@
+<%- include('top') %>
+<div class="page-head">
+  <div>
+    <h1>Your account</h1>
+    <p class="muted">Signed in as <strong><%= admin.username %></strong>.</p>
+  </div>
+</div>
+<% if (errors.length) { %><div class="toast toast-err" role="alert"><% for (const e of errors) { %><div><%= e %></div><% } %></div><% } %>
+<form method="post" action="/admin/account/password" class="card narrow-card stack">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <h2 class="card-title">Change password</h2>
+  <div class="field"><label for="current">Current password</label><input id="current" name="current" type="password" autocomplete="current-password" required></div>
+  <div class="field"><label for="password">New password</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="10" required><p class="help">At least 10 characters. A short sentence is easy to remember and hard to guess.</p></div>
+  <div class="field"><label for="confirm">Type the new password again</label><input id="confirm" name="confirm" type="password" autocomplete="new-password" minlength="10" required></div>
+  <button class="btn btn-primary btn-lg" type="submit">Change password</button>
+  <p class="help">Changing your password signs you out on all other devices.</p>
+</form>
+<%- include('bottom') %>

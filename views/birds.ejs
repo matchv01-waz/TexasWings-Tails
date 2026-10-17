@@ -1,0 +1,128 @@
+<%- include('partials/head') %>
+<%
+  const statusOptions = [['current', 'All current birds'], ['available', 'Available'], ['coming_soon', 'Coming soon'], ['reserved', 'Reserved'], ['sold', 'Sold / past birds']];
+  const sel = (a, b) => (a === b ? 'selected' : '');
+  const activeSpecies = species.find(s => s.slug === f.species);
+  // Removable "chips" for active filters
+  const chipsList = [];
+  const without = (key) => { const q = new URLSearchParams(); for (const [k, val] of Object.entries(f)) if (k !== key) q.set(k, val); const s = q.toString(); return '/birds' + (s ? '?' + s : ''); };
+  if (f.q) chipsList.push([`“${f.q}”`, without('q')]);
+  if (activeSpecies) chipsList.push([activeSpecies.name, without('species')]);
+  if (f.mutation) chipsList.push([f.mutation, without('mutation')]);
+  if (f.sex) chipsList.push([SEXES[f.sex] || f.sex, without('sex')]);
+  if (f.age) chipsList.push([AGE_GROUPS[f.age] || f.age, without('age')]);
+  if (f.status && f.status !== 'current') chipsList.push([(statusOptions.find(s => s[0] === f.status) || [0, f.status])[1], without('status')]);
+  if (f.min) chipsList.push([`From ${formatPrice(f.min)}`, without('min')]);
+  if (f.max) chipsList.push([`Up to ${formatPrice(f.max)}`, without('max')]);
+  const filterCount = chipsList.length;
+%>
+<section class="page-hero">
+  <div class="wrap">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">Available Birds</span></nav>
+    <h1 class="page-title"><%= activeSpecies ? activeSpecies.name : settings.birds_heading %></h1>
+    <p class="lead"><%= settings.birds_intro %></p>
+  </div>
+</section>
+
+<section class="section section-tight">
+  <div class="wrap listing">
+    <aside class="filters" id="filters" data-filters aria-label="Filter birds">
+      <form class="filters-form" id="bird-filters" method="get" action="/birds" data-filter-form>
+        <div class="filters-head">
+          <h2 class="filters-title"><%- icon('filter') %> Filter birds</h2>
+          <button class="icon-btn filters-close" type="button" data-filters-close aria-label="Close filters"><%- icon('close') %></button>
+        </div>
+        <div class="filters-body">
+          <div class="field">
+            <label for="f-q">Search</label>
+            <div class="input-icon"><%- icon('search') %><input id="f-q" name="q" type="search" value="<%= f.q || '' %>" placeholder="Name, color…"></div>
+          </div>
+          <fieldset class="field">
+            <legend>Availability</legend>
+            <div class="pill-options">
+              <% for (const [val, label] of statusOptions) { %>
+              <label class="pill-option"><input type="radio" name="status" value="<%= val %>" <%- (f.status || 'current') === val ? 'checked' : '' %>><span><%= label %></span></label>
+              <% } %>
+            </div>
+          </fieldset>
+          <div class="field">
+            <label for="f-species">Species</label>
+            <div class="select-wrap"><select id="f-species" name="species">
+              <option value="">All species</option>
+              <% for (const sp of species) { %><option value="<%= sp.slug %>" <%= sel(f.species, sp.slug) %>><%= sp.name %></option><% } %>
+            </select><%- icon('chevron-down') %></div>
+          </div>
+          <div class="field">
+            <label for="f-mutation">Color / mutation</label>
+            <div class="select-wrap"><select id="f-mutation" name="mutation">
+              <option value="">Any color</option>
+              <% for (const mu of mutations) { %><option value="<%= mu %>" <%= sel(f.mutation, mu) %>><%= mu %></option><% } %>
+            </select><%- icon('chevron-down') %></div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="f-sex">Sex</label>
+              <div class="select-wrap"><select id="f-sex" name="sex">
+                <option value="">Any</option>
+                <% for (const [val, label] of Object.entries(SEXES)) { %><option value="<%= val %>" <%= sel(f.sex, val) %>><%= label %></option><% } %>
+              </select><%- icon('chevron-down') %></div>
+            </div>
+            <div class="field">
+              <label for="f-age">Age</label>
+              <div class="select-wrap"><select id="f-age" name="age">
+                <option value="">Any age</option>
+                <% for (const [val, label] of Object.entries(AGE_GROUPS)) { %><option value="<%= val %>" <%= sel(f.age, val) %>><%= label %></option><% } %>
+              </select><%- icon('chevron-down') %></div>
+            </div>
+          </div>
+          <% if (settings.show_prices === '1') { %>
+          <fieldset class="field">
+            <legend>Price range</legend>
+            <div class="field-row">
+              <div class="input-prefix"><span>$</span><input name="min" type="number" inputmode="numeric" min="0" step="1" value="<%= f.min || '' %>" placeholder="<%= bounds && bounds.min !== null ? Math.floor(bounds.min) : 'Min' %>" aria-label="Minimum price"></div>
+              <div class="input-prefix"><span>$</span><input name="max" type="number" inputmode="numeric" min="0" step="1" value="<%= f.max || '' %>" placeholder="<%= bounds && bounds.max !== null ? Math.ceil(bounds.max) : 'Max' %>" aria-label="Maximum price"></div>
+            </div>
+          </fieldset>
+          <% } %>
+        </div>
+        <div class="filters-foot">
+          <a class="btn btn-outline" href="/birds">Clear all</a>
+          <button class="btn btn-primary" type="submit">Show birds</button>
+        </div>
+      </form>
+    </aside>
+
+    <div class="results">
+      <div class="results-bar">
+        <p class="results-count" aria-live="polite"><strong><%= birds.length %></strong> <%= birds.length === 1 ? 'bird' : 'birds' %></p>
+        <div class="results-tools">
+          <button class="btn btn-outline btn-sm filters-open" type="button" data-filters-open aria-controls="filters"><%- icon('filter') %> Filters<% if (filterCount) { %> <span class="count-dot"><%= filterCount %></span><% } %></button>
+          <label class="sort-label"><span class="sr-only">Sort by</span>
+            <div class="select-wrap select-sm"><select name="sort" form="bird-filters" data-autosubmit>
+              <option value="">Recommended</option>
+              <option value="newest" <%= sel(f.sort, 'newest') %>>Newest first</option>
+              <option value="price_asc" <%= sel(f.sort, 'price_asc') %>>Price: low to high</option>
+              <option value="price_desc" <%= sel(f.sort, 'price_desc') %>>Price: high to low</option>
+            </select><%- icon('chevron-down') %></div>
+          </label>
+        </div>
+      </div>
+      <% if (chipsList.length) { %>
+      <ul class="active-filters" aria-label="Active filters">
+        <% for (const [label, href] of chipsList) { %><li><a href="<%= href %>"><%= label %> <%- icon('close') %><span class="sr-only"> (remove filter)</span></a></li><% } %>
+      </ul>
+      <% } %>
+
+      <% if (birds.length) { %>
+      <div class="bird-grid bird-grid-listing">
+        <% for (const bird of birds) { %><%- include('partials/bird-card', { bird }) %><% } %>
+      </div>
+      <% } else if (filtered) { %>
+        <%- include('partials/empty-birds', { title: 'No birds match these filters', text: 'Try removing a filter — or contact Wasim to ask about upcoming birds that match what you are looking for.', clearLink: '/birds', speciesSlug: f.species }) %>
+      <% } else { %>
+        <%- include('partials/empty-birds') %>
+      <% } %>
+    </div>
+  </div>
+</section>
+<%- include('partials/foot') %>

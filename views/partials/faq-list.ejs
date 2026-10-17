@@ -1,0 +1,8 @@
+<div class="faq-list">
+  <% faqs.forEach((q, i) => { %>
+  <details class="faq-item"<%- locals.openFirst && i === 0 ? ' open' : '' %>>
+    <summary><span><%= q.question %></span><span class="faq-toggle" aria-hidden="true"></span></summary>
+    <div class="faq-answer prose"><%- textToHtml(q.answer) %></div>
+  </details>
+  <% }) %>
+</div>

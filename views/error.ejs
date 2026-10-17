@@ -1,0 +1,20 @@
+<%- include('partials/head') %>
+<section class="section error-page">
+  <div class="wrap narrow">
+    <div class="empty-state">
+      <div class="empty-art" aria-hidden="true"><img src="/static/img/brand/parrot-silhouette.png" alt="" width="513" height="640"></div>
+      <% if (status === 404) { %>
+      <h1 class="empty-title">This page flew away</h1>
+      <p>The page you're looking for doesn't exist or may have moved. If you were looking for a bird, it may have already found its new home.</p>
+      <% } else { %>
+      <h1 class="empty-title">Something went wrong</h1>
+      <p>Sorry — please try again in a moment.</p>
+      <% } %>
+      <div class="empty-actions">
+        <a class="btn btn-primary" href="/birds">See Available Birds</a>
+        <a class="btn btn-outline" href="/">Back to Home</a>
+      </div>
+    </div>
+  </div>
+</section>
+<%- include('partials/foot') %>

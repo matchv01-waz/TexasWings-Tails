@@ -1,0 +1,55 @@
+<%- include('top') %>
+<div class="page-head">
+  <div>
+    <h1><%= page.title %></h1>
+    <p class="muted"><%= page.intro %></p>
+  </div>
+</div>
+<form method="post" action="/admin/content/<%= pageKey %>" enctype="multipart/form-data" class="settings-form" data-dirty-check>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <% for (const g of page.groups) { %>
+  <section class="card">
+    <h2 class="card-title"><%= g.title %></h2>
+    <% if (g.intro) { %><p class="help"><%= g.intro %></p><% } %>
+    <div class="stack">
+      <% for (const f of g.fields) { const val = values[f.key] ?? ''; const id = 'f-' + f.key; %>
+      <% if (f.type === 'image') { const img = imgs[f.key]; %>
+      <div class="field">
+        <span class="label"><%= f.label %></span>
+        <div class="image-field">
+          <% if (img) { %>
+          <div class="current-image"><%- imgTag(img, { alt: '', sizes: '360px' }) %></div>
+          <% } else { %>
+          <div class="current-image no-image"><%- icon('image') %><span>No photo yet</span></div>
+          <% } %>
+          <div class="stack">
+            <label class="dropzone-label dropzone-sm"><%- icon('upload') %><strong><%= img ? 'Replace photo' : 'Choose a photo' %></strong><input type="file" name="<%= f.key %>" accept="image/*" data-preview></label>
+            <div class="preview-grid" data-preview-grid></div>
+            <% if (img) { %>
+            <div class="field"><label for="alt-<%= f.key %>">Photo description (for accessibility &amp; Google)</label><input id="alt-<%= f.key %>" name="alt_<%= f.key %>" value="<%= img.alt %>" maxlength="300" placeholder="e.g. A blue Indian ringneck perched on a branch"></div>
+            <label class="check-row"><input type="checkbox" name="remove_<%= f.key %>" value="1"><span>Remove this photo</span></label>
+            <% } %>
+          </div>
+        </div>
+        <% if (f.help) { %><p class="help"><%= f.help %></p><% } %>
+      </div>
+      <% } else if (f.type === 'checkbox') { %>
+      <label class="check-row"><input type="checkbox" name="<%= f.key %>" value="1" <%- val === '1' ? 'checked' : '' %>><span><strong><%= f.label %></strong><% if (f.help) { %><small><%= f.help %></small><% } %></span></label>
+      <% } else { %>
+      <div class="field">
+        <label for="<%= id %>"><%= f.label %></label>
+        <% if (f.type === 'textarea') { %>
+        <textarea id="<%= id %>" name="<%= f.key %>" rows="<%= f.rows || 3 %>"><%= val %></textarea>
+        <% } else { %>
+        <input id="<%= id %>" name="<%= f.key %>" type="<%= f.type || 'text' %>" value="<%= val %>">
+        <% } %>
+        <% if (f.help) { %><p class="help"><%= f.help %></p><% } %>
+      </div>
+      <% } %>
+      <% } %>
+    </div>
+  </section>
+  <% } %>
+  <div class="save-bar"><button class="btn btn-primary btn-lg" type="submit"><%- icon('check') %> Save changes</button></div>
+</form>
+<%- include('bottom') %>

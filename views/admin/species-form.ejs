@@ -1,0 +1,93 @@
+<%- include('top') %>
+<%
+  const isNew = !sp.id;
+  const v = (k) => (sp[k] === null || sp[k] === undefined ? '' : sp[k]);
+  const textareas = [
+    ['overview', 'Overview', 4, 'A short introduction to the species.'],
+    ['personality', 'Personality', 4, ''],
+    ['characteristics', 'Typical characteristics', 5, 'Tip: start each line with "- " to make a bullet list.'],
+    ['care', 'Care information', 4, ''],
+    ['diet', 'Diet information', 4, ''],
+    ['socialization', 'Socialization', 4, 'Describe how you raise and socialize your birds of this species. Leave empty to hide.'],
+  ];
+%>
+<div class="page-head">
+  <div>
+    <a class="back" href="/admin/species"><%- icon('arrow-left') %> All species</a>
+    <h1><%= isNew ? 'Add a species' : sp.name %></h1>
+  </div>
+  <% if (!isNew) { %>
+  <div class="head-actions">
+    <a class="btn btn-outline" href="<%= sp.url %>" target="_blank" rel="noopener"><%- icon('eye') %> View page</a>
+    <a class="btn btn-outline" href="/admin/birds/new?species=<%= sp.id %>"><%- icon('plus') %> Add a bird of this species</a>
+    <form method="post" action="/admin/species/<%= sp.id %>/delete" data-confirm="Delete the <%= sp.name %> page? This cannot be undone."><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-danger-outline" type="submit"><%- icon('trash') %> Delete</button></form>
+  </div>
+  <% } %>
+</div>
+<% if (errors.length) { %><div class="toast toast-err" role="alert"><% for (const e of errors) { %><div><%= e %></div><% } %></div><% } %>
+
+<div class="notice">
+  <%- icon('help') %>
+  <p>The starting text on species pages is general information about each species. Please read it and change anything so it matches your own experience — nothing here is shown as a promise about your birds.</p>
+</div>
+
+<form method="post" action="<%= isNew ? '/admin/species' : '/admin/species/' + sp.id %>" enctype="multipart/form-data" class="edit-layout" data-dirty-check>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="edit-main">
+    <section class="card">
+      <h2 class="card-title">Names</h2>
+      <div class="form-grid">
+        <div class="field"><label for="name">Name (plural) <span class="req">*</span></label><input id="name" name="name" value="<%= v('name') %>" required placeholder="e.g. Quaker Parrots"></div>
+        <div class="field"><label for="singular">Name (one bird)</label><input id="singular" name="singular" value="<%= v('singular') %>" placeholder="e.g. Quaker Parrot"></div>
+        <div class="field"><label for="scientific_name">Scientific name <span class="optional">(optional)</span></label><input id="scientific_name" name="scientific_name" value="<%= v('scientific_name') %>"></div>
+        <div class="field"><label for="tagline">Short tagline</label><input id="tagline" name="tagline" value="<%= v('tagline') %>" maxlength="120"></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2 class="card-title">Quick facts</h2>
+      <div class="form-grid form-grid-3">
+        <div class="field"><label for="size">Size</label><input id="size" name="size" value="<%= v('size') %>"></div>
+        <div class="field"><label for="lifespan">Lifespan</label><input id="lifespan" name="lifespan" value="<%= v('lifespan') %>"></div>
+        <div class="field"><label for="noise_level">Noise level</label><input id="noise_level" name="noise_level" value="<%= v('noise_level') %>"></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2 class="card-title">Species information</h2>
+      <p class="help">Each section only appears on the website when it has text.</p>
+      <div class="stack">
+        <% for (const [key, label, rows, help] of textareas) { %>
+        <div class="field">
+          <label for="<%= key %>"><%= label %></label>
+          <textarea id="<%= key %>" name="<%= key %>" rows="<%= rows %>"><%= v(key) %></textarea>
+          <% if (help) { %><p class="help"><%= help %></p><% } %>
+        </div>
+        <% } %>
+      </div>
+    </section>
+  </div>
+  <aside class="edit-side">
+    <section class="card sticky-card">
+      <h2 class="card-title">Main photo</h2>
+      <% if (sp.hero) { %>
+      <div class="current-image"><%- imgTag(sp.hero, { alt: '', sizes: '320px' }) %></div>
+      <label class="check-row"><input type="checkbox" name="remove_hero" value="1"><span>Remove this photo</span></label>
+      <% } %>
+      <label class="dropzone-label dropzone-sm"><%- icon('upload') %><strong><%= sp.hero ? 'Replace photo' : 'Choose a photo' %></strong><span>Wide photos work best</span><input type="file" name="hero" accept="image/*" data-preview></label>
+      <div class="preview-grid" data-preview-grid></div>
+      <div class="field">
+        <label for="accent">Placeholder color</label>
+        <input id="accent" name="accent" type="color" value="<%= v('accent') || '#6f8f5e' %>">
+        <p class="help">Used behind the parrot drawing when there's no photo.</p>
+      </div>
+      <label class="check-row"><input type="checkbox" name="published" value="1" <%- sp.published ? 'checked' : '' %>><span><strong>Show on website</strong><small>Untick to hide this species</small></span></label>
+      <button class="btn btn-primary btn-lg btn-block" type="submit"><%- icon('check') %> <%= isNew ? 'Add species' : 'Save changes' %></button>
+    </section>
+  </aside>
+</form>
+
+<% if (!isNew) { %>
+<p class="help section-label">More photos for the <%= sp.name %> page</p>
+<%- include('photo-manager', { base: 'species', ownerId: sp.id, photos: sp.photos }) %>
+<% } %>
+<%- include('bottom') %>

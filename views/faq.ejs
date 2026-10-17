@@ -1,0 +1,29 @@
+<%- include('partials/head') %>
+<section class="page-hero">
+  <div class="wrap">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">FAQ</span></nav>
+    <h1 class="page-title">Frequently Asked Questions</h1>
+    <p class="lead">Answers to common questions about our birds and bringing one home.</p>
+  </div>
+</section>
+<section class="section section-tight">
+  <div class="wrap narrow">
+    <% if (faqs.length) { %>
+      <%- include('partials/faq-list') %>
+    <% } else { %>
+      <div class="empty-state">
+        <h2 class="empty-title">Answers coming soon</h2>
+        <p>In the meantime, Wasim is happy to answer any question directly.</p>
+      </div>
+    <% } %>
+    <div class="faq-cta">
+      <h2 class="faq-cta-title">Still have a question?</h2>
+      <p>Contact Wasim directly — there's no such thing as a silly question when it comes to your new companion.</p>
+      <div class="empty-actions">
+        <% if (wa) { %><a class="btn btn-wa" href="<%= wa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> WhatsApp Wasim</a><% } %>
+        <a class="btn btn-primary" href="/contact">Contact Wasim</a>
+      </div>
+    </div>
+  </div>
+</section>
+<%- include('partials/foot') %>

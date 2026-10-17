@@ -1,0 +1,110 @@
+<%- include('partials/head') %>
+<%
+  const quick = [['ruler', 'Size', sp.size], ['clock', 'Lifespan', sp.lifespan], ['sound', 'Noise level', sp.noise_level]].filter(q => q[2]);
+  const sections = [
+    ['Overview', sp.overview],
+    ['Personality', sp.personality],
+    ['Typical characteristics', sp.characteristics],
+    ['Care', sp.care],
+    ['Diet', sp.diet],
+    ['Socialization', sp.socialization],
+  ].filter(s => s[1] && s[1].trim());
+  const current = birds.filter(b => b.status !== 'sold');
+  const spWa = waLink(settings, `Hi Wasim, I'm interested in your ${sp.name}. Do you have any available or coming soon?`);
+%>
+<section class="species-hero<%= hero ? ' has-photo' : '' %>" style="--ph:<%= sp.accent %>">
+  <div class="species-hero-media">
+    <% if (hero) { %><%- imgTag(hero, { alt: hero.alt || sp.singular || sp.name, sizes: '100vw', priority: true }) %>
+    <% } else { %><img class="hero-illustration" src="/static/img/brand/parrot-silhouette.png" alt="" width="513" height="640"><% } %>
+  </div>
+  <div class="wrap species-hero-content">
+    <nav class="breadcrumbs breadcrumbs-light" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><a href="/species">Our Birds</a><span aria-hidden="true">/</span><span aria-current="page"><%= sp.name %></span></nav>
+    <h1 class="species-title"><%= sp.name %></h1>
+    <% if (sp.scientific_name) { %><p class="scientific"><%= sp.scientific_name %></p><% } %>
+    <% if (sp.tagline) { %><p class="species-tagline"><%= sp.tagline %></p><% } %>
+    <div class="hero-actions">
+      <a class="btn btn-gold btn-lg" href="#available"><%= current.length ? `See ${current.length} available` : 'Availability' %> <%- icon('arrow-right') %></a>
+      <% if (spWa) { %><a class="btn btn-wa btn-lg" href="<%= spWa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> Ask Wasim</a>
+      <% } else { %><a class="btn btn-ghost-light btn-lg" href="/contact?species=<%= sp.slug %>#contact">Ask Wasim</a><% } %>
+    </div>
+  </div>
+</section>
+
+<% if (quick.length) { %>
+<section class="quick-facts-wrap">
+  <div class="wrap">
+    <ul class="quick-facts">
+      <% for (const [ic, label, val] of quick) { %>
+      <li><span class="qf-icon"><%- icon(ic) %></span><span><small><%= label %></small><strong><%= val %></strong></span></li>
+      <% } %>
+    </ul>
+  </div>
+</section>
+<% } %>
+
+<section class="section">
+  <div class="wrap species-body">
+    <div class="species-main">
+      <% if (sections.length) { for (const [title, body] of sections) { %>
+      <div class="info-block">
+        <h2 class="info-title"><%= title %></h2>
+        <div class="prose prose-lg"><%- textToHtml(body) %></div>
+      </div>
+      <% } } else { %>
+      <p class="lead">More information about <%= sp.name %> is coming soon. In the meantime, feel free to contact Wasim with any questions.</p>
+      <% } %>
+    </div>
+    <aside class="species-side">
+      <div class="side-card">
+        <h2 class="side-card-title">Interested in a<%= /^[aeiou]/i.test(sp.singular || sp.name) ? 'n' : '' %> <%= sp.singular || sp.name %>?</h2>
+        <p><%= current.length ? `${current.length} ${current.length === 1 ? 'bird is' : 'birds are'} listed right now.` : 'None are listed right now, but new babies may be coming soon.' %></p>
+        <div class="cta-stack">
+          <% if (current.length) { %><a class="btn btn-primary btn-block" href="#available">View <%= sp.name %></a><% } %>
+          <% if (spWa) { %><a class="btn btn-wa btn-block" href="<%= spWa %>" target="_blank" rel="noopener"><%- icon('whatsapp') %> WhatsApp Wasim</a><% } %>
+          <a class="btn btn-outline btn-block" href="/contact?species=<%= sp.slug %>#contact">Send a Message</a>
+        </div>
+      </div>
+      <% if (others.length) { %>
+      <nav class="side-card side-links" aria-label="Other species">
+        <h2 class="side-card-title">Other species</h2>
+        <ul><% for (const o of others) { %><li><a href="<%= o.url %>"><%= o.name %> <%- icon('arrow-right') %></a></li><% } %></ul>
+      </nav>
+      <% } %>
+    </aside>
+  </div>
+</section>
+
+<% if (sp.photos.length) { %>
+<section class="section section-cream section-tight" aria-labelledby="photos-heading">
+  <div class="wrap">
+    <div class="section-head"><h2 id="photos-heading" class="section-title"><%= sp.name %> Photos</h2></div>
+    <div class="photo-strip" data-lightbox-group>
+      <% sp.photos.forEach((p, i) => { %>
+      <a class="photo-strip-item" href="<%= imgSrc(p, 1600) %>" data-lightbox data-alt="<%= p.alt || sp.singular %>" data-caption="<%= p.alt || '' %>">
+        <%- imgTag(p, { alt: p.alt || `${sp.singular || sp.name} photo ${i + 1}`, sizes: '(min-width: 900px) 300px, 70vw' }) %>
+      </a>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section class="section" id="available" aria-labelledby="sp-available-heading">
+  <div class="wrap">
+    <div class="section-head section-head-split">
+      <div>
+        <p class="eyebrow">Available now</p>
+        <h2 id="sp-available-heading" class="section-title">Available <%= sp.name %></h2>
+      </div>
+      <a class="link-arrow" href="/birds">All available birds <%- icon('arrow-right') %></a>
+    </div>
+    <% if (current.length) { %>
+    <div class="bird-grid">
+      <% for (const bird of current) { %><%- include('partials/bird-card', { bird }) %><% } %>
+    </div>
+    <% } else { %>
+      <%- include('partials/empty-birds', { title: `No ${sp.name} are listed right now`, text: `New ${sp.name.toLowerCase()} may be coming soon. Contact Wasim to ask about upcoming availability.`, speciesSlug: sp.slug }) %>
+    <% } %>
+  </div>
+</section>
+<%- include('partials/foot') %>

@@ -1,0 +1,34 @@
+# Render Blueprint — creates the website service on Render's free plan.
+# In Render: New → Blueprint → pick this repository. Render will ask for the
+# values marked "sync: false" (your Neon and Cloudflare R2 details).
+services:
+  - type: web
+    name: texas-wings-and-tails
+    runtime: node
+    plan: free
+    region: ohio            # pick the region closest to your Neon database (Neon "US East (Ohio)" = aws-us-east-2)
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false

@@ -8,6 +8,10 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # The bucket name and its public URL are not secrets (the bucket name matches the project
+  # name used throughout the code). Keep Netlify's secret scan from blocking the deploy on them;
+  # the real secrets (DATABASE_URL, R2 keys, SESSION_SECRET) are still scanned.
+  SECRETS_SCAN_OMIT_KEYS = "R2_BUCKET,R2_PUBLIC_URL"
 
 [functions]
   node_bundler = "zisi"

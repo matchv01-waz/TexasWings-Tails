@@ -9,7 +9,7 @@
 
 <section class="card">
   <h2 class="card-title">Upload photos</h2>
-  <form method="post" action="/admin/gallery/upload" enctype="multipart/form-data" class="upload-panel" data-upload-form>
+  <form method="post" action="/admin/gallery/upload" enctype="multipart/form-data" class="upload-panel" data-upload-form data-batch-url="/admin/gallery/upload" data-batch-reverse>
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <input type="hidden" name="return_category" value="<%= category %>">
     <label class="dropzone-label">

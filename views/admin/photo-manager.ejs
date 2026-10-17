@@ -2,7 +2,7 @@
 <section class="card" id="photos">
   <h2 class="card-title">Photos <small class="muted"><%= photos.length %> photo<%= photos.length === 1 ? '' : 's' %></small></h2>
   <p class="help">The first photo is the cover photo. Drag photos to change the order, or use the arrows.</p>
-  <form class="dropzone" method="post" action="<%= actionBase %>" enctype="multipart/form-data" data-upload-form>
+  <form class="dropzone" method="post" action="<%= actionBase %>" enctype="multipart/form-data" data-upload-form data-batch-url="<%= actionBase %>" data-after-hash="photos">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <label class="dropzone-label">
       <%- icon('upload') %>

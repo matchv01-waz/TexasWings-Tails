@@ -140,6 +140,11 @@ CREATE TABLE IF NOT EXISTS inquiries (
   is_read INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS throttle (
+  key TEXT NOT NULL,
+  at DOUBLE PRECISION NOT NULL
+);
+CREATE INDEX IF NOT EXISTS throttle_key_at ON throttle (key, at);
 `;
 
 // "?" → "$1, $2 …" (none of our SQL contains a literal question mark)

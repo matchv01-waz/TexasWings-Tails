@@ -9,14 +9,18 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { get, run, DATA_DIR } = require('./db');
+const throttle = require('./throttle');
 
 const COOKIE = 'twt_admin';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours, sliding
 const IS_PROD = process.env.NODE_ENV === 'production';
 
 // Secret used to sign contact-form timing tokens. In production set SESSION_SECRET
-// (Render generates one automatically from render.yaml). Locally it's kept in DATA_DIR.
-const SECRET = process.env.SESSION_SECRET || (() => {
+// (Render generates one automatically from render.yaml). Without it, a secret is derived
+// from DATABASE_URL so every serverless copy agrees; locally it's kept in DATA_DIR.
+const SECRET = process.env.SESSION_SECRET || (process.env.DATABASE_URL
+  ? crypto.createHash('sha256').update('twt-form-secret:' + process.env.DATABASE_URL).digest('hex')
+  : null) || (() => {
   const file = path.join(DATA_DIR, 'secret.key');
   try { return fs.readFileSync(file, 'utf8').trim(); }
   catch {
@@ -46,34 +50,24 @@ function setCookie(res, value, maxAgeMs) {
   res.append('Set-Cookie', parts.join('; '));
 }
 
-// ---- login throttling (in memory; the site runs as a single server) ----
-// 5 failures for one username from one IP, or 20 failures from one IP, locks for 15 minutes.
-const failures = new Map(); // key -> { count, until }
+// ---- login throttling (stored in the database, so it holds across serverless copies) ----
+// 5 failures for one username from one IP, or 20 failures from one IP, within 15 minutes locks login.
 const LOCK_MS = 15 * 60 * 1000;
-function isLocked(key) {
-  const f = failures.get(key);
-  return !!(f && f.until > Date.now());
-}
-function recordFailure(key, max) {
-  const f = failures.get(key) || { count: 0, until: 0 };
-  f.count += 1;
-  if (f.count >= max) { f.until = Date.now() + LOCK_MS; f.count = 0; }
-  failures.set(key, f);
-  if (failures.size > 10000) failures.clear();
-}
 
 async function attemptLogin(username, password, ip) {
-  const userKey = `u:${ip}|${String(username).toLowerCase()}`;
-  const ipKey = `ip:${ip}`;
-  if (isLocked(userKey) || isLocked(ipKey)) return { error: 'Too many attempts. Please wait 15 minutes and try again.' };
+  const userKey = `login-u:${ip}|${String(username).toLowerCase()}`.slice(0, 300);
+  const ipKey = `login-ip:${ip}`;
+  if ((await throttle.count(userKey, LOCK_MS)) >= 5 || (await throttle.count(ipKey, LOCK_MS)) >= 20) {
+    return { error: 'Too many attempts. Please wait 15 minutes and try again.' };
+  }
   const user = await get('SELECT * FROM admin_users WHERE lower(username) = lower(?)', String(username || ''));
   const ok = await bcrypt.compare(String(password || ''), user ? user.password_hash : DUMMY_HASH);
   if (!user || !ok) {
-    recordFailure(userKey, 5);
-    recordFailure(ipKey, 20);
+    await throttle.hit(userKey);
+    await throttle.hit(ipKey);
     return { error: 'That username and password combination is not correct.' };
   }
-  failures.delete(userKey);
+  await throttle.clear(userKey);
   return { user };
 }
 

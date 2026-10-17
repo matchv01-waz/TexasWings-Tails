@@ -24,7 +24,7 @@
 
 <% if (!isNew) { %><%- include('photo-manager', { base: 'birds', ownerId: b.id, photos: b.photos }) %><% } %>
 
-<form method="post" action="<%= isNew ? '/admin/birds' : '/admin/birds/' + b.id %>" enctype="multipart/form-data" class="edit-layout" data-dirty-check>
+<form method="post" action="<%= isNew ? '/admin/birds' : '/admin/birds/' + b.id %>" enctype="multipart/form-data" class="edit-layout" data-dirty-check<% if (isNew) { %> data-batch-url="{redirect}/photos"<% } %>>
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <div class="edit-main">
     <% if (isNew) { %>

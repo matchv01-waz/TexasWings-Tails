@@ -1,0 +1,39 @@
+# Netlify: static files (CSS, JS, logo, fonts) come from the CDN; every page,
+# the admin panel and the contact form run in one function (netlify/functions/server.js).
+# Secrets (DATABASE_URL, R2_*, SESSION_SECRET) are set in the Netlify dashboard, not here.
+
+[build]
+  command = "npm run build:netlify"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  node_bundler = "zisi"
+  included_files = ["views/**", "public/css/**", "public/js/**"]
+  # sharp ships native image libraries; keep the whole package instead of bundling it.
+  external_node_modules = ["sharp"]
+
+[[redirects]]
+  from = "/favicon.ico"
+  to = "/static/img/brand/favicon-32.png"
+  status = 200
+
+# Anything that isn't a file in dist/ goes to the app.
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/server/:splat"
+  status = 200
+
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    X-Content-Type-Options = "nosniff"

@@ -1,22 +1,33 @@
 'use strict';
 require('./src/load-env');
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
 const express = require('express');
 const helmet = require('helmet');
 const compression = require('compression');
 
 const db = require('./src/db');
 const storage = require('./src/storage');
-const { getSettings } = require('./src/settings');
+const { getSettings, CACHE_MS } = require('./src/settings');
 const { loadSession } = require('./src/auth');
 const { imgTag, src: imgSrc, srcset: imgSrcset, getImage } = require('./src/images');
 const h = require('./src/helpers');
 
 const IS_PROD = process.env.NODE_ENV === 'production';
+const SERVERLESS = !!process.env.SERVERLESS; // set by netlify/functions/server.js
 const PORT = Number(process.env.PORT) || 3000;
-const ASSET_VERSION = Date.now().toString(36);
+// Changes whenever the CSS or JavaScript changes, so browsers fetch the new files after a deploy.
+const ASSET_VERSION = (() => {
+  const hash = crypto.createHash('sha1');
+  for (const file of ['css/site.css', 'css/admin.css', 'js/site.js', 'js/admin.js']) {
+    try { hash.update(fs.readFileSync(path.join(__dirname, 'public', file))); } catch { /* missing file */ }
+  }
+  return hash.digest('hex').slice(0, 10);
+})();
 
 const app = express();
+app.engine('ejs', require('ejs').__express);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || 1);
@@ -46,7 +57,7 @@ app.use(helmet({
   strictTransportSecurity: IS_PROD,
   crossOriginEmbedderPolicy: false,
 }));
-app.use(compression());
+if (!SERVERLESS) app.use(compression()); // Netlify compresses responses itself
 
 // Static files. Uploaded images get unique paths, so they can be cached "forever".
 const YEAR = 365 * 24 * 3600 * 1000;
@@ -60,10 +71,12 @@ app.use(express.urlencoded({ extended: true, limit: '2mb', parameterLimit: 5000 
 app.use(express.json({ limit: '200kb' }));
 app.use(loadSession);
 
-// Data shown on every page (species menu, default share image) — cached until the admin saves anything.
+// Data shown on every page (species menu, default share image) — cached like the settings.
 let siteCache = null;
+let siteCachedAt = 0;
 async function siteData() {
-  if (!siteCache) {
+  if (!siteCache || Date.now() - siteCachedAt > CACHE_MS) {
+    siteCachedAt = Date.now();
     const settings = await getSettings();
     siteCache = {
       navSpecies: await db.all('SELECT name, slug FROM species WHERE published = 1 ORDER BY sort_order, name'),
@@ -114,14 +127,26 @@ app.use((err, req, res, next) => {
   res.status(status).render('error', { status, seo: { title: 'Something went wrong', noindex: true } });
 });
 
-async function start() {
+/** Connect to the database and check storage. Used by start() and by the Netlify function. */
+async function prepare() {
+  if (SERVERLESS && !db.USING_PG) {
+    throw new Error('DATABASE_URL is not set. Add it in Netlify → Site configuration → Environment variables, then redeploy.');
+  }
   const kind = await db.init();
+  if (SERVERLESS) {
+    if (!storage.USING_R2) console.warn('WARNING: R2 is not configured. Photo uploads will not work on Netlify until the R2_* variables are set.');
+    return;
+  }
   console.log(`Database: ${kind === 'postgres' ? 'Postgres (DATABASE_URL)' : 'local PGlite in ' + db.DATA_DIR}`);
   console.log(`Photos:   ${storage.USING_R2 ? 'Cloudflare R2 bucket "' + process.env.R2_BUCKET + '"' : 'local folder ' + db.UPLOAD_DIR}`);
   const problem = await storage.check();
   if (problem) console.warn('WARNING: ' + problem);
   if (IS_PROD && !db.USING_PG) console.warn('WARNING: DATABASE_URL is not set. On Render, all content will be lost on every restart.');
   if (IS_PROD && !storage.USING_R2) console.warn('WARNING: R2 is not configured. On Render, uploaded photos will be lost on every restart.');
+}
+
+async function start() {
+  await prepare();
   app.listen(PORT, () => console.log(`Texas Wings & Tails running at http://localhost:${PORT}`));
 }
 
@@ -134,4 +159,4 @@ if (require.main === module) {
     process.exit(1);
   });
 }
-module.exports = { app, start };
+module.exports = { app, prepare, start };

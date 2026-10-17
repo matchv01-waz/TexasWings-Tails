@@ -14,7 +14,8 @@
     "demo:seed": "node scripts/demo.js seed",
     "demo:clear": "node scripts/demo.js clear",
     "brand": "node scripts/brand-assets.js",
-    "check": "node scripts/check-config.js"
+    "check": "node scripts/check-config.js",
+    "build:netlify": "node scripts/build-netlify.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1146.0",
@@ -29,6 +30,7 @@
     "multer": "^2.4.0",
     "nodemailer": "^10.0.10",
     "pg": "^8.23.1",
+    "serverless-http": "^4.0.0",
     "sharp": "^0.35.4"
   }
 }

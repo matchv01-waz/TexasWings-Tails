@@ -40,6 +40,123 @@
     document.addEventListener('submit', function () { dirty = false; }, true);
     window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 
+    // ---- photo uploads: shrink photos in the browser and send big selections in parts ----
+    // Hosting limits one request to about 6 MB (Netlify) and the site never shows photos wider
+    // than 1600px, so photos are resized to at most 2048px first. Forms with data-batch-url send
+    // the photos a few at a time: the first request carries the form, the rest go to that URL
+    // ("{redirect}" = the page the first request redirected to, e.g. the new bird).
+    var MAX_EDGE = 2048, BATCH_BYTES = 3.5 * 1024 * 1024, BATCH_FILES = 4;
+
+    function shrink(file) {
+      return new Promise(function (resolve) {
+        if (!/^image\//.test(file.type) || /gif/.test(file.type) || !window.URL || !HTMLCanvasElement.prototype.toBlob) return resolve(file);
+        var url = URL.createObjectURL(file);
+        var img = new Image();
+        img.onerror = function () { URL.revokeObjectURL(url); resolve(file); }; // e.g. HEIC outside Safari: send as is
+        img.onload = function () {
+          URL.revokeObjectURL(url);
+          var w = img.naturalWidth, hgt = img.naturalHeight;
+          var scale = Math.min(1, MAX_EDGE / Math.max(w, hgt));
+          if (scale === 1 && file.size < 1.5 * 1024 * 1024 && /jpeg|png|webp/.test(file.type)) return resolve(file);
+          var c = document.createElement('canvas');
+          c.width = Math.round(w * scale); c.height = Math.round(hgt * scale);
+          var ctx = c.getContext('2d');
+          ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); // transparent PNGs get a white background
+          ctx.drawImage(img, 0, 0, c.width, c.height); // browsers apply the phone's rotation (EXIF) here
+          c.toBlob(function (blob) {
+            if (!blob || (scale === 1 && blob.size >= file.size)) return resolve(file);
+            resolve(new File([blob], file.name.replace(/\.[^.]*$/, '') + '.jpg', { type: 'image/jpeg' }));
+          }, 'image/jpeg', 0.88);
+        };
+        img.src = url;
+      });
+    }
+
+    function post(url, body) {
+      return fetch(url, { method: 'POST', body: body, credentials: 'same-origin' });
+    }
+    // The server answered with a page instead of a redirect (e.g. a missing field): show it.
+    function showPage(r) {
+      return r.text().then(function (html) {
+        if (!/<html/i.test(html)) { alert(html || 'The upload did not work. Please try again with fewer or smaller photos.'); location.reload(); return; }
+        document.open(); document.write(html); document.close();
+      });
+    }
+
+    function sendWithPhotos(form, submitter, inputs) {
+      var status = form.querySelector('[data-upload-status]');
+      var label = submitter && submitter.classList.contains('btn') ? submitter : null;
+      function say(text) { if (label) label.textContent = text; if (status) { status.hidden = false; status.textContent = text; } }
+      $$('button', form).forEach(function (b) { if (b.type !== 'button') b.disabled = true; });
+      say('Preparing photos…');
+
+      var jobs = [];
+      inputs.forEach(function (i) { Array.prototype.forEach.call(i.files, function (f) { jobs.push({ name: i.name, file: f }); }); });
+      var chain = Promise.resolve();
+      jobs.forEach(function (j) { chain = chain.then(function () { return shrink(j.file).then(function (f) { j.file = f; }); }); });
+
+      chain.then(function () {
+        var fields = new FormData(form);
+        inputs.forEach(function (i) { fields.delete(i.name); });
+        if (submitter && submitter.name) fields.append(submitter.name, submitter.value);
+
+        var batchUrl = form.getAttribute('data-batch-url');
+        var batches = [[]], size = 0;
+        jobs.forEach(function (j) {
+          var cur = batches[batches.length - 1];
+          if (batchUrl && cur.length && (size + j.file.size > BATCH_BYTES || cur.length >= BATCH_FILES)) { batches.push(cur = []); size = 0; }
+          cur.push(j); size += j.file.size;
+        });
+        // Gallery uploads go to the top of the list, so send the last photos first to keep their order.
+        if (form.hasAttribute('data-batch-reverse')) batches.reverse();
+        var total = batches.length;
+        var hash = form.getAttribute('data-after-hash');
+        var done = 0, finalUrl = null, errorUrl = null;
+
+        // Every request gets its own copy of the form fields plus only its own photos.
+        function copyFields() { var fd = new FormData(); fields.forEach(function (v, k) { fd.append(k, v); }); return fd; }
+        function withFiles(fd, batch) { batch.forEach(function (j) { fd.append(j.name, j.file, j.file.name); }); return fd; }
+        function progress() { say(total > 1 ? 'Uploading photos… ' + (done + 1) + ' of ' + total : (jobs.length ? 'Uploading photos…' : 'Saving…')); }
+
+        progress();
+        return post(form.action, withFiles(copyFields(), batches[0])).then(function (r) {
+          if (!r.redirected || !r.ok) return showPage(r);
+          finalUrl = r.url;
+          if (/[?&]err=/.test(r.url)) errorUrl = r.url;
+          var rest = batches.slice(1);
+          var path = new URL(r.url).pathname;
+          var next = Promise.resolve();
+          rest.forEach(function (batch) {
+            next = next.then(function () {
+              done += 1; progress();
+              var fd;
+              if (batchUrl.indexOf('{redirect}') !== -1) { fd = new FormData(); fd.append('_csrf', csrf); }
+              else fd = copyFields();
+              return post(batchUrl.replace('{redirect}', path), withFiles(fd, batch)).then(function (r2) {
+                if (!r2.ok) throw new Error('upload failed');
+                if (/[?&]err=/.test(r2.url)) errorUrl = r2.url;
+              });
+            });
+          });
+          return next.then(function () {
+            location.href = (errorUrl || finalUrl) + (hash ? '#' + hash : '');
+          });
+        });
+      }).catch(function () {
+        alert('Some photos could not be uploaded. Please check your connection and try again.');
+        location.reload();
+      });
+    }
+
+    document.addEventListener('submit', function (e) {
+      var form = e.target;
+      if (e.defaultPrevented || !window.fetch || !window.FormData || !window.Promise) return;
+      var inputs = $$('input[type=file]', form).filter(function (i) { return i.files && i.files.length; });
+      if (!inputs.length) return;
+      e.preventDefault();
+      sendWithPhotos(form, e.submitter, inputs);
+    });
+
     // ---- prevent double submits (e.g. tapping "Add bird" twice while photos upload) ----
     // Runs after the form's own handlers (like confirm dialogs); buttons are disabled on the next
     // tick so the clicked button's name/value is still sent with the form.
@@ -70,8 +187,9 @@
     $$('input[data-auto-upload]').forEach(function (input) {
       input.addEventListener('change', function () {
         if (!input.files.length) return;
-        showUploading(input.form);
-        input.form.submit();
+        // requestSubmit() runs the submit handlers above (photo shrinking); submit() would skip them.
+        if (input.form.requestSubmit) input.form.requestSubmit();
+        else { showUploading(input.form); input.form.submit(); }
       });
     });
     $$('.dropzone-label').forEach(function (z) {

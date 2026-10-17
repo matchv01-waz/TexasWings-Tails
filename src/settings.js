@@ -168,13 +168,18 @@ const PAGES = {
   },
 };
 
+// Cached until the admin saves something. When the site runs as several serverless copies
+// (Netlify), a save only clears the copy that handled it, so the cache also expires quickly there.
+const CACHE_MS = process.env.SERVERLESS ? 10000 : Infinity;
 let cached = null;
+let cachedAt = 0;
 async function getSettings() {
-  if (!cached) {
+  if (!cached || Date.now() - cachedAt > CACHE_MS) {
     const s = { ...DEFAULTS };
     for (const row of await all('SELECT key, value FROM settings')) s[row.key] = row.value;
     s.galleryCategories = s.gallery_categories.split('\n').map((x) => x.trim()).filter(Boolean);
     cached = s;
+    cachedAt = Date.now();
   }
   return cached;
 }
@@ -191,4 +196,4 @@ async function saveSettings(values) {
 
 const invalidateSettings = () => { cached = null; };
 
-module.exports = { DEFAULTS, PAGES, IMAGE_KEYS, getSettings, saveSettings, invalidateSettings };
+module.exports = { CACHE_MS, DEFAULTS, PAGES, IMAGE_KEYS, getSettings, saveSettings, invalidateSettings };

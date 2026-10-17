@@ -14,7 +14,7 @@ Website and content management system (CMS) for **Texas Wings & Tails**, a compa
 | Database | Postgres: **Neon** (free) in production; PGlite (built-in local Postgres) for development | Content survives restarts on free hosting; local development needs no setup |
 | Photos | **Cloudflare R2** (free) in production; a local folder for development | Fast worldwide delivery, 10 GB free, no download fees |
 | Images | `sharp` | Every upload is resized into WebP files at 480, 960 and 1600 px wide, auto-rotated, and stripped of EXIF/GPS metadata |
-| Hosting | **Render** free plan (`render.yaml` included) | Runs the Node server; allows business sites |
+| Hosting | **Netlify** (`netlify.toml` included): the app runs as one serverless function and static files come from the CDN. A `render.yaml` for Render is also included. | No server to manage; automatic deploys from GitHub |
 | Fonts | Fraunces and DM Sans, served from this site | No third-party font requests |
 
 ## Getting started (local)
@@ -75,14 +75,14 @@ The site is built not to make claims Wasim hasn't made. Before launch:
 6. **Testimonials:** add only real reviews, with the customer's permission. The section stays hidden until one exists.
 7. **Website settings:** enter the live website address so search engines get correct links.
 
-## Deploying to Render (free) with Neon and Cloudflare R2
+## Deploying to Netlify with Neon and Cloudflare R2
 
-Render's free plan erases the server's disk on every restart, so all content lives in **Neon** and all photos in **Cloudflare R2**. Both are free for a site this size.
+On Netlify the pages, admin panel and contact form run in one serverless function (`netlify/functions/server.js`), and CSS, JavaScript, the logo and fonts are served from Netlify's CDN. A function has no permanent disk, so all content lives in **Neon** and all photos in **Cloudflare R2**. Both are free for a site this size. `netlify.toml` holds the build settings.
 
 ### 1. Create the Neon database
 1. Sign up at https://neon.tech (free).
-2. Create a project named `texas-wings-and-tails`. For the region, pick **AWS US East (Ohio)**, which is the same area as the Render region in `render.yaml`.
-3. Click **Connect** and copy the **connection string** (it starts with `postgresql://` and ends with `sslmode=require`).
+2. Create a project named `texas-wings-and-tails`. For the region, pick **AWS US East (Ohio)**, close to where Netlify runs functions by default.
+3. Click **Connect** and copy the **connection string** (it starts with `postgresql://` and ends with `sslmode=require`). Use the **pooled** connection string; it handles many short-lived connections well.
 
 ### 2. Create the R2 bucket
 Follow the R2 steps: create a bucket, turn on public access, and create an API token with **Object Read & Write** for that bucket only. You need five values: account ID, Access Key ID, Secret Access Key, bucket name and public URL. The Access Key ID and Secret Access Key are separate from the token value that starts with `cfat_`.
@@ -102,29 +102,42 @@ Then run:
 npm run check          # connects to Neon, creates the tables, uploads + deletes a test file in R2
 npm run create-admin   # creates Wasim's login in the live database
 ```
-Render's free plan has no command line, so the admin account is created from your computer. Run `npm run create-admin` again later to reset the password.
+Netlify has no command line for the site, so the admin account is created from your computer. Run `npm run create-admin` again later to reset the password.
 
 While `.env` contains these values, `npm run dev` on your computer works on the **live** content. To go back to a separate local test database, rename `.env` (for example to `.env.live`).
 
 ### 4. Put the code on GitHub
-Create a **private** repository and push this project. `.env` and `data/` are excluded by `.gitignore`, so secrets and local data are never uploaded.
+Push this project to a GitHub repository. `.env` and `data/` are excluded by `.gitignore`, so secrets and local data are never uploaded.
 
-### 5. Create the Render service
-1. Sign up at https://render.com with your GitHub account.
-2. Click **New → Blueprint**, choose the repository, and Render will read `render.yaml`.
-3. Fill in the six values it asks for (the same ones as in `.env`), then click **Apply**.
-4. When the deploy finishes, open the `https://….onrender.com` address, go to `/admin`, log in, and enter the address under **Website settings → Website address**.
+### 5. Create the Netlify site
+1. Sign up at https://netlify.com with your GitHub account.
+2. **Add new project → Import an existing project → GitHub**, and choose the repository. Netlify reads `netlify.toml`, so leave the build settings as they are (build command `npm run build:netlify`, publish directory `dist`).
+3. Before the first deploy (or afterwards, under **Project configuration → Environment variables**), add:
 
-The deploy log should show `Database: Postgres` and `Photos: Cloudflare R2`. If it shows a WARNING instead, a value is missing or wrong.
+   | Key | Value |
+   |---|---|
+   | `DATABASE_URL` | the Neon connection string |
+   | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_URL` | the same values as in `.env` |
+   | `SESSION_SECRET` | a long random text, for example from `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+
+   Mark the secret values as **secret**. Environment variables only reach the site after a deploy, so after adding or changing one, run **Deploys → Trigger deploy**.
+4. When the deploy finishes, open the `https://….netlify.app` address, go to `/admin`, log in, and enter the address under **Website settings → Website address**.
+
+If a page says "The website is starting up or is not configured yet", `DATABASE_URL` is missing or wrong. Check **Logs → Functions** in Netlify for the exact message.
 
 ### 6. Custom domain (optional)
-Render → your service → **Settings → Custom Domains**. Add the domain, then create the DNS record Render shows you at your domain registrar. HTTPS is set up automatically. Update **Website address** in the admin panel to match.
+Netlify → your site → **Domain management → Add a domain**. Follow the DNS steps Netlify shows. HTTPS is set up automatically. Update **Website address** in the admin panel to match.
 
-### Things to know about the free plan
-- **Sleeping:** after about 15 minutes without visitors, Render pauses the site, and the next visitor waits up to about a minute while it wakes up. To avoid this, a free monitor such as UptimeRobot can visit `https://your-site/healthz` every 5 minutes. Check Render's current free-plan terms first.
+### How the site works on Netlify
+- **Photo uploads:** Netlify accepts at most about 6 MB per request and 10 seconds per request. The admin panel therefore shrinks photos in the browser (to 2048 px, more than the 1600 px the site displays) and sends large selections a few photos at a time, with progress shown on the button. This needs JavaScript in the admin panel, which every modern browser has.
+- **Several copies:** Netlify can run several copies of the function at once. Sessions, login lockouts and contact-form limits are stored in the database, so they work across copies. Settings and menus are cached for at most 10 seconds, so an edit can take up to 10 seconds to appear on every public page.
+- **First visit after a quiet period** can take a second or two longer while the function and Neon wake up.
 - **Updates:** every push to GitHub redeploys automatically.
 - **Backups:** Neon keeps a short restore history on the free plan. For extra safety, export the database now and then from the Neon dashboard. Photos in R2 aren't affected by deploys.
-- **Email alerts** (optional `SMTP_*` settings): Render's free plan may block outgoing email ports. If alerts don't arrive, messages are still saved under **Messages** in the admin panel.
+- **Email alerts** (optional `SMTP_*` settings) work as long as the SMTP provider is reachable. If alerts don't arrive, messages are still saved under **Messages** in the admin panel.
+
+## Deploying to Render instead
+`render.yaml` is a ready Render blueprint: **New → Blueprint**, choose the repository, and fill in the same six values (Render generates `SESSION_SECRET` itself). On Render's free plan the site sleeps after about 15 minutes without visitors, and the next visitor waits up to about a minute.
 
 ## Running on your own server instead
 Any host with Node 20+ works. Set the same environment variables plus `NODE_ENV=production` and `TRUST_PROXY=1` (when behind a proxy), run `npm ci --omit=dev && npm start`, and serve the site over HTTPS.
@@ -134,7 +147,7 @@ Any host with Node 20+ works. Set the same environment variables plus `NODE_ENV=
 - No public sign-up. Admin accounts are created only from the command line.
 - Passwords are hashed with bcrypt (cost 12). Sessions use random IDs stored server-side, in `HttpOnly`, `SameSite=Strict` cookies (also `Secure` in production) that expire after 12 hours of inactivity.
 - Every admin form checks a CSRF token.
-- After 5 failed logins for one username, or 20 from one IP address, login is locked for 15 minutes.
+- After 5 failed logins for one username, or 20 from one IP address, within 15 minutes, login is locked for 15 minutes. Attempts are counted in the database, so this holds on serverless hosting too.
 - Changing the password signs out all other sessions.
 - Strict Content-Security-Policy and Helmet security headers are applied.
 - Admin pages send `noindex` headers, and `robots.txt` disallows `/admin`. The public site doesn't link to the admin panel.
@@ -147,24 +160,27 @@ Any host with Node 20+ works. Set the same environment variables plus `NODE_ENV=
 - Schema.org markup: `LocalBusiness` (Dallas, TX, with no street address), `Product`/`Offer` for each bird, `FAQPage`, and `BreadcrumbList`.
 - `sitemap.xml` and `robots.txt` are generated automatically.
 - Images are responsive (`srcset`/`sizes`), lazy-loaded below the fold, and sized to avoid layout shift. The main photo is preloaded with high priority.
-- Gzip compression is enabled. Uploaded photos are served from Cloudflare R2 and cached long-term, because each file gets a unique, unchanging URL.
+- Responses are compressed (by Netlify's CDN, or by the app on other hosts). Uploaded photos are served from Cloudflare R2 and cached long-term, because each file gets a unique, unchanging URL.
 
 ## Project structure
 
 ```
 server.js              app setup, security headers, static files, /healthz
-render.yaml            Render deployment blueprint
+netlify.toml           Netlify build, function and CDN settings
+netlify/functions/     the Netlify function that runs the app
+render.yaml            Render deployment blueprint (alternative)
 src/db.js              Postgres connection (Neon or local PGlite), schema, first-run seeding
 src/storage.js         photo storage (Cloudflare R2 or local folder)
 src/seed-content.js    starter species info + FAQ questions
 src/settings.js        editable site settings and admin form definitions
 src/images.js          upload processing + responsive <img> helper
 src/auth.js            login, sessions, CSRF, anti-spam tokens
+src/throttle.js        login lockout + contact-form rate limit (stored in the database)
 src/models.js          queries for birds, species, gallery, testimonials, FAQs
 src/routes/public.js   public pages, contact form, sitemap
 src/routes/admin.js    admin panel
 views/                 page templates (views/admin/ = admin panel)
 public/                CSS, JS, logo files
 assets/brand/          original logo artwork
-scripts/               create-admin, check (tests .env settings), demo data, brand (logo files)
+scripts/               create-admin, check (tests .env settings), demo data, brand (logo files), build-netlify
 ```

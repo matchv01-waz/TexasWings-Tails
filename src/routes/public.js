@@ -4,6 +4,7 @@ const { run } = require('../db');
 const { getImage, src: imgSrc } = require('../images');
 const { formToken, checkFormToken } = require('../auth');
 const { notifyInquiry } = require('../mailer');
+const throttle = require('../throttle');
 const m = require('../models');
 const h = require('../helpers');
 
@@ -295,15 +296,12 @@ router.get('/contact', async (req, res) => {
   await renderContact(req, res, await contactForm(values));
 });
 
-// Simple per-IP rate limit for the contact form (in memory; the site runs as a single server).
-const hits = new Map();
-function rateLimited(ip) {
-  const now = Date.now();
-  const list = (hits.get(ip) || []).filter((t) => now - t < 15 * 60 * 1000);
-  list.push(now);
-  hits.set(ip, list);
-  if (hits.size > 5000) hits.clear();
-  return list.length > 6;
+// Per-IP rate limit for the contact form: more than 6 attempts in 15 minutes is refused.
+// Counted in the database so it holds across serverless copies.
+async function rateLimited(ip) {
+  const key = 'contact:' + ip;
+  await throttle.hit(key);
+  return (await throttle.count(key, 15 * 60 * 1000)) > 6;
 }
 
 router.post('/contact', async (req, res) => {
@@ -327,7 +325,7 @@ router.post('/contact', async (req, res) => {
   if (v.whatsapp && !/^[\d\s()+.-]{7,}$/.test(v.whatsapp)) errors.whatsapp = 'Please enter a valid WhatsApp number.';
   if (v.message.length < 10) errors.message = 'Please write a short message (at least 10 characters).';
   if (!checkFormToken(b.t)) errors.form = 'Please wait a few seconds and send your message again.';
-  if (rateLimited(req.ip)) errors.form = 'Too many messages were sent from your connection. Please try again later or contact Wasim directly.';
+  if (await rateLimited(req.ip)) errors.form = 'Too many messages were sent from your connection. Please try again later or contact Wasim directly.';
   if (Object.keys(errors).length) {
     if (!errors.form) errors.form = 'Please check the highlighted fields.';
     return renderContact(req, res, await contactForm(v, errors), 422);

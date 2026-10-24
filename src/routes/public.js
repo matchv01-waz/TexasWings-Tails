@@ -346,7 +346,9 @@ router.post('/contact', async (req, res) => {
   await run('INSERT INTO inquiries (name, email, phone, whatsapp, interest, message) VALUES (?, ?, ?, ?, ?, ?)',
     inquiry.name, inquiry.email, inquiry.phone, inquiry.whatsapp, inquiry.interest, inquiry.message);
   const s = res.locals.settings;
-  notifyInquiry(s.notify_email || s.contact_email, inquiry, s.site_name).catch((e) => console.error('Email alert failed:', e.message));
+  // Wait for the email alert: on Netlify the function is frozen once the response is sent,
+  // which would cut off an alert still being sent in the background.
+  await notifyInquiry(s.notify_email || s.contact_email, inquiry, s.site_name).catch((e) => console.error('Email alert failed:', e.message));
   res.redirect(303, '/contact?sent=1#contact');
 });
 

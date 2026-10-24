@@ -12,6 +12,10 @@ function getTransport() {
       port: Number(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true',
       auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
+      // The contact form waits for the alert, so give up quickly if the mail server is slow.
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 7000,
     });
   }
   return transport;
@@ -29,8 +33,11 @@ async function notifyInquiry(to, inquiry, siteName) {
     '',
     inquiry.message,
   ].filter((l) => typeof l === 'string');
+  // Send from our own address (Gmail won't send as the visitor) but show the visitor's name.
+  const fromSetting = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const fromAddress = (fromSetting.match(/<([^>]+)>/) || [])[1] || fromSetting;
   await t.sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    from: { name: `${inquiry.name} via ${siteName}`, address: fromAddress },
     to,
     replyTo: inquiry.email,
     subject: `New message from ${inquiry.name} — ${siteName}`,

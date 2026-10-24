@@ -202,19 +202,46 @@
       var label = input.closest('label');
       var grid = label && label.nextElementSibling && label.nextElementSibling.matches('[data-preview-grid]') ? label.nextElementSibling : null;
       if (!grid) return;
-      input.addEventListener('change', function () {
+      var strong = label.querySelector('strong');
+      var emptyText = strong ? strong.textContent : '';
+      // Removing a photo rebuilds the input's file list, which needs DataTransfer (all modern browsers).
+      var canRemove = (function () { try { return !!new DataTransfer().items; } catch (err) { return false; } })();
+
+      function removeFile(index) {
+        var dt = new DataTransfer();
+        Array.prototype.forEach.call(input.files, function (f, i) { if (i !== index) dt.items.add(f); });
+        input.files = dt.files;
+        render();
+      }
+
+      function render() {
         grid.innerHTML = '';
-        Array.prototype.slice.call(input.files, 0, 30).forEach(function (file) {
+        Array.prototype.slice.call(input.files, 0, 30).forEach(function (file, i) {
           if (!/^image\//.test(file.type)) return;
+          var item = document.createElement('div');
+          item.className = 'preview-item';
           var img = document.createElement('img');
           img.alt = file.name;
           img.src = URL.createObjectURL(file);
           img.onload = function () { URL.revokeObjectURL(img.src); };
-          grid.appendChild(img);
+          item.appendChild(img);
+          if (canRemove) {
+            var x = document.createElement('button');
+            x.type = 'button';
+            x.className = 'preview-remove';
+            x.title = 'Remove this photo';
+            x.setAttribute('aria-label', 'Remove ' + file.name);
+            x.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>';
+            x.addEventListener('click', function () { removeFile(i); });
+            item.appendChild(x);
+          }
+          grid.appendChild(item);
         });
-        var strong = label.querySelector('strong');
-        if (strong) strong.textContent = input.files.length + (input.files.length === 1 ? ' photo chosen' : ' photos chosen');
-      });
+        var n = input.files.length;
+        if (strong) strong.textContent = n ? n + (n === 1 ? ' photo chosen' : ' photos chosen') : emptyText;
+      }
+
+      input.addEventListener('change', render);
     });
 
     // ---- drag & drop reordering ----

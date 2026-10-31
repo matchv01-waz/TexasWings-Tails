@@ -83,7 +83,9 @@ async function uploadUrl(key, contentType, bytes) {
 /** Origin the browser uploads to directly (for the Content-Security-Policy), or null. */
 function uploadOrigin() {
   if (!USING_R2) return null;
-  return process.env.R2_ENDPOINT ? new URL(process.env.R2_ENDPOINT).origin : `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  if (process.env.R2_ENDPOINT) return new URL(process.env.R2_ENDPOINT).origin;
+  // Signed links put the bucket name in the host name.
+  return `https://${process.env.R2_BUCKET}.${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 }
 
 function url(key) {

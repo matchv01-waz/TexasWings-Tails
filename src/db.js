@@ -145,6 +145,8 @@ CREATE TABLE IF NOT EXISTS throttle (
   at DOUBLE PRECISION NOT NULL
 );
 CREATE INDEX IF NOT EXISTS throttle_key_at ON throttle (key, at);
+-- Videos live in the images table too; "video" is the file extension (NULL for photos).
+ALTER TABLE images ADD COLUMN IF NOT EXISTS video TEXT;
 `;
 
 // "?" → "$1, $2 …" (none of our SQL contains a literal question mark)

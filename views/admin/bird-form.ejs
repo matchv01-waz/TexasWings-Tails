@@ -32,9 +32,9 @@
       <h2 class="card-title">Photos</h2>
       <label class="dropzone-label">
         <%- icon('upload') %>
-        <strong>Tap to choose photos</strong>
-        <span>Choose several at once. The first one becomes the cover. You can add more later.</span>
-        <input type="file" name="photos" accept="image/*" multiple data-preview>
+        <strong>Tap to choose photos or videos</strong>
+        <span>Choose several at once (videos up to 20 MB). The first one becomes the cover. You can add more later.</span>
+        <input type="file" name="photos" accept="image/*,video/mp4,video/quicktime,video/webm" multiple data-preview>
       </label>
       <div class="preview-grid" data-preview-grid></div>
     </section>

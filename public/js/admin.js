@@ -72,6 +72,51 @@
       });
     }
 
+    // ---- videos: sent straight to storage (they're too big for the website's request limit) ----
+    var MAX_VIDEO_BYTES = 20 * 1024 * 1024;
+    function isVideo(file) { return /^video\//.test(file.type); }
+    function tooBig(file) { return isVideo(file) && file.size > MAX_VIDEO_BYTES; }
+
+    // Width and height, so the page can reserve the right space before the video loads.
+    function videoSize(file) {
+      return new Promise(function (resolve) {
+        var v = document.createElement('video');
+        var url = URL.createObjectURL(file);
+        var done = function (w, h) { URL.revokeObjectURL(url); resolve({ width: w || 0, height: h || 0 }); };
+        v.preload = 'metadata';
+        v.onloadedmetadata = function () { done(v.videoWidth, v.videoHeight); };
+        v.onerror = function () { done(0, 0); };
+        setTimeout(function () { done(0, 0); }, 8000);
+        v.src = url;
+      });
+    }
+
+    function uploadVideo(file, onProgress) {
+      return Promise.all([
+        videoSize(file),
+        fetch('/admin/media/video', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+          body: JSON.stringify({ type: file.type, size: file.size }),
+        }).then(function (r) { return r.json().catch(function () { return { error: 'The upload could not start.' }; }); }),
+      ]).then(function (res) {
+        var dim = res[0], t = res[1];
+        if (t.error) throw new Error(file.name + ': ' + t.error);
+        return new Promise(function (resolve, reject) {
+          var x = new XMLHttpRequest();
+          x.open('PUT', t.url);
+          x.setRequestHeader('Content-Type', t.contentType);
+          if (t.url.charAt(0) === '/') x.setRequestHeader('X-CSRF-Token', csrf); // local development route
+          x.upload.onprogress = function (e) { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+          x.onload = function () { if (x.status >= 200 && x.status < 300) resolve(); else reject(new Error(file.name + ' could not be uploaded.')); };
+          x.onerror = function () { reject(new Error(file.name + ' could not be uploaded. Please check your connection.')); };
+          x.send(file);
+        }).then(function () {
+          return JSON.stringify({ key: t.key, ext: t.ext, width: dim.width, height: dim.height, name: file.name });
+        });
+      });
+    }
+
     function post(url, body) {
       return fetch(url, { method: 'POST', body: body, credentials: 'same-origin' });
     }
@@ -95,6 +140,17 @@
       var chain = Promise.resolve();
       jobs.forEach(function (j) { chain = chain.then(function () { return shrink(j.file).then(function (f) { j.file = f; }); }); });
 
+      // Upload videos first; the form then only carries their storage key.
+      var videos = jobs.filter(function (j) { return isVideo(j.file); });
+      videos.forEach(function (j, n) {
+        chain = chain.then(function () {
+          var name = videos.length > 1 ? 'Uploading video ' + (n + 1) + ' of ' + videos.length : 'Uploading video';
+          say(name + '…');
+          return uploadVideo(j.file, function (p) { say(name + '… ' + Math.round(p * 100) + '%'); })
+            .then(function (ref) { j.video = ref; j.file = null; });
+        });
+      });
+
       chain.then(function () {
         var fields = new FormData(form);
         inputs.forEach(function (i) { fields.delete(i.name); });
@@ -104,8 +160,9 @@
         var batches = [[]], size = 0;
         jobs.forEach(function (j) {
           var cur = batches[batches.length - 1];
-          if (batchUrl && cur.length && (size + j.file.size > BATCH_BYTES || cur.length >= BATCH_FILES)) { batches.push(cur = []); size = 0; }
-          cur.push(j); size += j.file.size;
+          var bytes = j.file ? j.file.size : 0;
+          if (batchUrl && cur.length && (size + bytes > BATCH_BYTES || cur.length >= BATCH_FILES)) { batches.push(cur = []); size = 0; }
+          cur.push(j); size += bytes;
         });
         // Gallery uploads go to the top of the list, so send the last photos first to keep their order.
         if (form.hasAttribute('data-batch-reverse')) batches.reverse();
@@ -115,7 +172,14 @@
 
         // Every request gets its own copy of the form fields plus only its own photos.
         function copyFields() { var fd = new FormData(); fields.forEach(function (v, k) { fd.append(k, v); }); return fd; }
-        function withFiles(fd, batch) { batch.forEach(function (j) { fd.append(j.name, j.file, j.file.name); }); return fd; }
+        function withFiles(fd, batch) {
+          // A video goes in as a tiny "reference" file, so it keeps its place among the photos.
+          batch.forEach(function (j) {
+            if (j.video) fd.append(j.name, new Blob([j.video], { type: 'application/x-video-ref' }), 'video-ref.json');
+            else fd.append(j.name, j.file, j.file.name);
+          });
+          return fd;
+        }
         function progress() { say(total > 1 ? 'Uploading photos… ' + (done + 1) + ' of ' + total : (jobs.length ? 'Uploading photos…' : 'Saving…')); }
 
         progress();
@@ -142,8 +206,8 @@
             location.href = (errorUrl || finalUrl) + (hash ? '#' + hash : '');
           });
         });
-      }).catch(function () {
-        alert('Some photos could not be uploaded. Please check your connection and try again.');
+      }).catch(function (e) {
+        alert(e && e.message && e.message !== 'upload failed' ? e.message : 'Some photos could not be uploaded. Please check your connection and try again.');
         location.reload();
       });
     }
@@ -154,6 +218,13 @@
       var inputs = $$('input[type=file]', form).filter(function (i) { return i.files && i.files.length; });
       if (!inputs.length) return;
       e.preventDefault();
+      var big = [];
+      inputs.forEach(function (i) { Array.prototype.forEach.call(i.files, function (f) { if (tooBig(f)) big.push(f.name); }); });
+      if (big.length) {
+        alert('Videos must be 20 MB or smaller. Please remove: ' + big.join(', '));
+        $$('input[data-auto-upload]', form).forEach(function (i) { i.value = ''; }); // nothing to remove them from
+        return;
+      }
       sendWithPhotos(form, e.submitter, inputs);
     });
 
@@ -217,14 +288,24 @@
       function render() {
         grid.innerHTML = '';
         Array.prototype.slice.call(input.files, 0, 30).forEach(function (file, i) {
-          if (!/^image\//.test(file.type)) return;
+          if (!/^(image|video)\//.test(file.type)) return;
           var item = document.createElement('div');
           item.className = 'preview-item';
-          var img = document.createElement('img');
-          img.alt = file.name;
-          img.src = URL.createObjectURL(file);
-          img.onload = function () { URL.revokeObjectURL(img.src); };
-          item.appendChild(img);
+          var media;
+          if (isVideo(file)) {
+            media = document.createElement('video');
+            media.muted = true;
+            media.preload = 'metadata';
+            media.setAttribute('aria-label', file.name);
+            media.src = URL.createObjectURL(file) + '#t=0.1';
+            item.classList.add('is-video');
+          } else {
+            media = document.createElement('img');
+            media.alt = file.name;
+            media.src = URL.createObjectURL(file);
+            media.onload = function () { URL.revokeObjectURL(media.src); };
+          }
+          item.appendChild(media);
           if (canRemove) {
             var x = document.createElement('button');
             x.type = 'button';
@@ -241,7 +322,18 @@
         if (strong) strong.textContent = n ? n + (n === 1 ? ' photo chosen' : ' photos chosen') : emptyText;
       }
 
-      input.addEventListener('change', render);
+      input.addEventListener('change', function () {
+        var big = Array.prototype.filter.call(input.files, tooBig);
+        if (big.length) {
+          alert('Videos must be 20 MB or smaller, so these were left out: ' + big.map(function (f) { return f.name; }).join(', '));
+          if (canRemove) {
+            var dt = new DataTransfer();
+            Array.prototype.forEach.call(input.files, function (f) { if (!tooBig(f)) dt.items.add(f); });
+            input.files = dt.files;
+          } else input.value = '';
+        }
+        render();
+      });
     });
 
     // ---- drag & drop reordering ----

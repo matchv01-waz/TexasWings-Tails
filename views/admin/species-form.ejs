@@ -73,7 +73,7 @@
       <div class="current-image"><%- imgTag(sp.hero, { alt: '', sizes: '320px' }) %></div>
       <label class="check-row"><input type="checkbox" name="remove_hero" value="1"><span>Remove this photo</span></label>
       <% } %>
-      <label class="dropzone-label dropzone-sm"><%- icon('upload') %><strong><%= sp.hero ? 'Replace photo' : 'Choose a photo' %></strong><span>Wide photos work best</span><input type="file" name="hero" accept="image/*" data-preview></label>
+      <label class="dropzone-label dropzone-sm"><%- icon('upload') %><strong><%= sp.hero ? 'Replace photo' : 'Choose a photo' %></strong><span>Wide photos or videos (up to 20 MB) work best</span><input type="file" name="hero" accept="image/*,video/mp4,video/quicktime,video/webm" data-preview></label>
       <div class="preview-grid" data-preview-grid></div>
       <div class="field">
         <label for="accent">Placeholder color</label>

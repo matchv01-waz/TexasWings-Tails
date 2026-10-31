@@ -1,6 +1,7 @@
 <%
   const pageUrl = siteUrl + (seo.path || currentPath);
-  const ogImage = seo.image || defaultOgImage;
+  // Link previews need a photo, so videos are skipped.
+  const ogImage = [seo.image, defaultOgImage].find((i) => i && !i.video);
   const nav = [
     ['/birds', 'Available Birds'],
     ['/species', 'Our Birds'],
@@ -38,7 +39,7 @@
 <link rel="apple-touch-icon" href="/static/img/brand/apple-touch-icon.png">
 <link rel="preload" href="/fonts/fraunces/fraunces-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/dm-sans/dm-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<% if (seo.preload) { %><link rel="preload" as="image" imagesrcset="<%= imgSrcset(seo.preload) %>" imagesizes="<%= seo.preloadSizes || '100vw' %>" fetchpriority="high">
+<% if (seo.preload && !seo.preload.video) { %><link rel="preload" as="image" imagesrcset="<%= imgSrcset(seo.preload) %>" imagesizes="<%= seo.preloadSizes || '100vw' %>" fetchpriority="high">
 <% } %><link rel="stylesheet" href="/static/css/site.css?v=<%= assetVersion %>">
 <script src="/static/js/site.js?v=<%= assetVersion %>" defer></script>
 <% for (const ld of (seo.jsonLd || [])) { %><script type="application/ld+json"><%- jsonLd(ld) %></script>

@@ -20,7 +20,7 @@
     <span class="label">Photo <span class="optional">(optional)</span></span>
     <% if (t.image) { %><div class="current-image current-image-sm"><%- imgTag(t.image, { alt: '', sizes: '160px' }) %></div>
     <label class="check-row"><input type="checkbox" name="remove_photo" value="1"><span>Remove photo</span></label><% } %>
-    <label class="dropzone-label dropzone-sm"><%- icon('upload') %><strong><%= t.image ? 'Replace photo' : 'Choose a photo' %></strong><span>e.g. the family with their bird</span><input type="file" name="photo" accept="image/*" data-preview></label>
+    <label class="dropzone-label dropzone-sm"><%- icon('upload') %><strong><%= t.image ? 'Replace photo' : 'Choose a photo' %></strong><span>e.g. the family with their bird</span><input type="file" name="photo" accept="image/*,video/mp4,video/quicktime,video/webm" data-preview></label>
     <div class="preview-grid" data-preview-grid></div>
   </div>
   <label class="check-row"><input type="checkbox" name="featured" value="1" <%- t.featured ? 'checked' : '' %>><span><strong>Featured</strong><small>Show on the homepage</small></span></label>

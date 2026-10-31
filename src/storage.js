@@ -56,13 +56,34 @@ async function remove(keys) {
   for (const d of dirs) await fs.promises.rmdir(d).catch(() => {}); // remove the folder once empty
 }
 
-async function exists(key) {
+/** Size in bytes of a stored file, or null when it doesn't exist. */
+async function size(key) {
   if (USING_R2) {
     const { HeadObjectCommand } = require('@aws-sdk/client-s3');
-    try { await client().send(new HeadObjectCommand({ Bucket: process.env.R2_BUCKET, Key: key })); return true; }
-    catch (e) { if (e.$metadata && e.$metadata.httpStatusCode === 404) return false; throw e; }
+    try { return (await client().send(new HeadObjectCommand({ Bucket: process.env.R2_BUCKET, Key: key }))).ContentLength; }
+    catch (e) { if (e.$metadata && e.$metadata.httpStatusCode === 404) return null; throw e; }
   }
-  return fs.existsSync(path.join(UPLOAD_DIR, key));
+  try { return (await fs.promises.stat(path.join(UPLOAD_DIR, key))).size; } catch { return null; }
+}
+const exists = async (key) => (await size(key)) !== null;
+
+/**
+ * Where the browser should PUT a large file (videos), bypassing the ~6 MB request limit of
+ * the hosting. R2: a signed link straight to the bucket, valid 15 minutes and only for this
+ * exact size and type. Local disk: an admin route of this app.
+ */
+async function uploadUrl(key, contentType, bytes) {
+  if (!USING_R2) return `/admin/media/local/${key}`;
+  const { PutObjectCommand } = require('@aws-sdk/client-s3');
+  const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+  const cmd = new PutObjectCommand({ Bucket: process.env.R2_BUCKET, Key: key, ContentType: contentType, ContentLength: bytes });
+  return getSignedUrl(client(), cmd, { expiresIn: 900, signableHeaders: new Set(['content-type', 'content-length']) });
+}
+
+/** Origin the browser uploads to directly (for the Content-Security-Policy), or null. */
+function uploadOrigin() {
+  if (!USING_R2) return null;
+  return process.env.R2_ENDPOINT ? new URL(process.env.R2_ENDPOINT).origin : `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 }
 
 function url(key) {
@@ -94,4 +115,4 @@ async function check() {
   }
 }
 
-module.exports = { USING_R2, put, remove, exists, url, publicOrigin, check };
+module.exports = { USING_R2, put, remove, exists, size, uploadUrl, uploadOrigin, url, publicOrigin, check };

@@ -45,8 +45,10 @@ app.use(helmet({
       scriptSrc: ["'self'", "'sha256-PtdI6/36DhPdMEgjNWV5ExIEqFovVcjUHPeOyApfBhs='"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'blob:', ...(photoOrigin ? [photoOrigin] : [])],
+      mediaSrc: ["'self'", 'blob:', ...(photoOrigin ? [photoOrigin] : [])],
       fontSrc: ["'self'"],
-      connectSrc: ["'self'"],
+      // Videos are uploaded from the browser straight to the R2 bucket.
+      connectSrc: ["'self'", ...(storage.uploadOrigin() ? [storage.uploadOrigin()] : [])],
       formAction: ["'self'"],
       frameAncestors: ["'none'"],
       objectSrc: ["'none'"],

@@ -23,7 +23,7 @@
           <div class="current-image no-image"><%- icon('image') %><span>No photo yet</span></div>
           <% } %>
           <div class="stack">
-            <label class="dropzone-label dropzone-sm"><%- icon('upload') %><strong><%= img ? 'Replace photo' : 'Choose a photo' %></strong><input type="file" name="<%= f.key %>" accept="image/*" data-preview></label>
+            <label class="dropzone-label dropzone-sm"><%- icon('upload') %><strong><%= img ? 'Replace photo' : 'Choose a photo' %></strong><input type="file" name="<%= f.key %>" accept="image/*,video/mp4,video/quicktime,video/webm" data-preview></label>
             <div class="preview-grid" data-preview-grid></div>
             <% if (img) { %>
             <div class="field"><label for="alt-<%= f.key %>">Photo description (for accessibility &amp; Google)</label><input id="alt-<%= f.key %>" name="alt_<%= f.key %>" value="<%= img.alt %>" maxlength="300" placeholder="e.g. A blue Indian ringneck perched on a branch"></div>

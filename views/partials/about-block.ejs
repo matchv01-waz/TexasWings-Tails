@@ -2,7 +2,7 @@
   <div class="about-photo">
     <div class="about-frame">
       <% if (aboutImage) { %>
-      <%- imgTag(aboutImage, { alt: aboutImage.alt || 'Wasim, owner of Texas Wings & Tails in Dallas, Texas', sizes: '(min-width: 960px) 460px, 90vw' }) %>
+      <%- imgTag(aboutImage, { alt: aboutImage.alt || 'Wasim, owner of Texas Wings & Tails in Dallas, Texas', sizes: '(min-width: 960px) 460px, 90vw', controls: true }) %>
       <% } else { %>
       <div class="about-placeholder">
         <span class="monogram" aria-hidden="true">W</span>

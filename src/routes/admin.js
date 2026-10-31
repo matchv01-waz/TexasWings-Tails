@@ -2,6 +2,7 @@
 // Admin dashboard. Every route except /login requires a signed-in admin, and
 // every POST is CSRF-checked. Admin pages are never indexed by search engines.
 
+const fs = require('fs');
 const os = require('os');
 const express = require('express');
 const multer = require('multer');
@@ -21,7 +22,7 @@ const MESSAGES = {
   created: 'Added successfully.',
   deleted: 'Deleted.',
   duplicated: 'Copy created — you are now editing the copy.',
-  uploaded: 'Photos uploaded.',
+  uploaded: 'Uploaded.',
   status: 'Status updated.',
   password: 'Password changed.',
 };
@@ -45,7 +46,14 @@ function back(res, url, msg, err) {
 const clip = (x, n = 5000) => String(x ?? '').replace(/\r\n?/g, '\n').trim().slice(0, n);
 // Whole numbers that fit a database id; anything else becomes null.
 const int = (x) => { const n = parseInt(x, 10); return Number.isInteger(n) && n > 0 && n <= 2147483647 ? n : null; };
-const filesFor = (req, field) => (req.files || []).filter((f) => f.fieldname === field);
+// Uploaded files for a form field. Videos the browser already sent straight to storage arrive as
+// small "application/x-video-ref" files holding {"key","ext","width","height","name"}.
+const filesFor = (req, field) => (req.files || []).filter((f) => f.fieldname === field).map((f) => {
+  if (f.mimetype !== 'application/x-video-ref') return f;
+  let v = null;
+  try { if (f.size < 2000) v = JSON.parse(fs.readFileSync(f.path, 'utf8')); } catch { /* not valid */ }
+  return v && typeof v === 'object' ? { video: v, originalname: clip(v.name, 120) || 'Video' } : { size: 0 };
+});
 
 // ---------------- login ----------------
 router.get('/login', async (req, res) => {
@@ -84,6 +92,23 @@ router.use(async (req, res, next) => {
     next();
   } catch (e) { next(e); }
 });
+
+// ---------------- direct video uploads ----------------
+// Videos are too big to pass through the website (Netlify allows ~6 MB per request), so the
+// browser asks for an upload URL, sends the file there, then submits the form with its key.
+router.post('/media/video', async (req, res) => {
+  const r = await images.startVideoUpload(String(req.body.type || ''), Number(req.body.size));
+  res.status(r.error ? 400 : 200).json(r);
+});
+
+// Local development without R2: the "upload URL" is this route.
+router.put('/media/local/:key/:file', auth.verifyCsrf,
+  express.raw({ type: () => true, limit: images.MAX_UPLOAD_BYTES }), async (req, res) => {
+    const storage = require('../storage');
+    if (storage.USING_R2 || !/^[0-9a-f]{18}$/.test(req.params.key) || !/^video\.(mp4|mov|webm)$/.test(req.params.file)) return res.sendStatus(404);
+    await storage.put(`${req.params.key}/${req.params.file}`, req.body, req.get('content-type'));
+    res.sendStatus(200);
+  });
 
 router.post('/logout', async (req, res) => {
   await auth.endSession(req, res);

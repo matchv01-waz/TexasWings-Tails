@@ -23,7 +23,7 @@ async function orgLd(res) {
     description: s.seo_description,
     url: siteUrl + '/',
     logo: siteUrl + '/static/img/brand/icon-512.png',
-    image: hero ? h.absUrl(siteUrl, imgSrc(hero, 1600)) : siteUrl + '/static/img/brand/og-default.png',
+    image: hero && !hero.video ? h.absUrl(siteUrl, imgSrc(hero, 1600)) : siteUrl + '/static/img/brand/og-default.png',
     ...(s.contact_email ? { email: s.contact_email } : {}),
     ...(s.phone ? { telephone: s.phone } : {}),
     address: { '@type': 'PostalAddress', addressLocality: 'Dallas', addressRegion: 'TX', addressCountry: 'US' },
@@ -134,7 +134,7 @@ router.get('/birds/:idslug', async (req, res, next) => {
     name: [bird.name, bird.species_singular].filter(Boolean).join(', '),
     description: h.excerpt(bird.description || `${bird.name} is a ${bird.mutation} ${bird.species_singular} raised in Dallas, Texas.`, 300),
     category: bird.species_name || 'Companion bird',
-    ...(bird.photos.length ? { image: bird.photos.slice(0, 4).map((p) => h.absUrl(siteUrl, imgSrc(p, 1600))) } : {}),
+    ...(bird.photos.some((p) => !p.video) ? { image: bird.photos.filter((p) => !p.video).slice(0, 4).map((p) => h.absUrl(siteUrl, imgSrc(p, 1600))) } : {}),
     brand: { '@type': 'Brand', name: s.site_name },
     ...(bird.price !== null && s.show_prices === '1' ? {
       offers: {
@@ -157,7 +157,7 @@ router.get('/birds/:idslug', async (req, res, next) => {
       title: `${fullName} | ${s.site_name}, Dallas`,
       description: h.excerpt(`${h.STATUSES[bird.status]}: ${bird.name}, ${[bird.mutation, bird.species_singular].filter(Boolean).join(' ')} from ${s.site_name} in Dallas, Texas. ${bird.description}`, 158),
       path: bird.url,
-      image: bird.photos[0],
+      image: bird.photos.find((p) => !p.video),
       preload: bird.photos[0],
       preloadSizes: '(min-width: 1000px) 620px, 100vw',
       type: 'product',

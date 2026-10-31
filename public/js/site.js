@@ -105,19 +105,40 @@
     if (!lb) return;
     var lbImg = $('[data-lb-img]', lb), lbCap = $('[data-lb-caption]', lb), lbCount = $('[data-lb-counter]', lb);
     var items = [], cur = 0, lastFocus = null;
+    var isVideoUrl = function (u) { return /\.(mp4|mov|webm)$/i.test(u || ''); };
+    // Videos play in the same spot as photos, with the normal player controls.
+    var lbVideo = document.createElement('video');
+    lbVideo.className = 'lb-img';
+    lbVideo.controls = true;
+    lbVideo.playsInline = true;
+    lbVideo.hidden = true;
+    lbImg.parentNode.insertBefore(lbVideo, lbImg);
+    function stopVideo() { lbVideo.pause(); lbVideo.removeAttribute('src'); lbVideo.load(); lbVideo.hidden = true; }
 
     function show(i) {
       cur = (i + items.length) % items.length;
       var a = items[cur];
-      lbImg.style.opacity = '0';
-      lbImg.onload = function () { lbImg.style.opacity = '1'; };
-      lbImg.src = a.getAttribute('href');
+      var href = a.getAttribute('href');
+      if (isVideoUrl(href)) {
+        lbImg.hidden = true;
+        lbImg.removeAttribute('src');
+        lbVideo.hidden = false;
+        lbVideo.src = href;
+        lbVideo.setAttribute('aria-label', a.getAttribute('data-alt') || '');
+        lbVideo.play().catch(function () { /* the viewer can press play */ });
+      } else {
+        stopVideo();
+        lbImg.hidden = false;
+        lbImg.style.opacity = '0';
+        lbImg.onload = function () { lbImg.style.opacity = '1'; };
+        lbImg.src = href;
+      }
       lbImg.alt = a.getAttribute('data-alt') || '';
       lbCap.textContent = a.getAttribute('data-caption') || '';
       lbCount.textContent = items.length > 1 ? (cur + 1) + ' / ' + items.length : '';
       $('[data-lb-prev]', lb).hidden = $('[data-lb-next]', lb).hidden = items.length < 2;
       // Preload neighbours for instant swiping.
-      [cur + 1, cur - 1].forEach(function (n) { var x = items[(n + items.length) % items.length]; if (x) (new Image()).src = x.getAttribute('href'); });
+      [cur + 1, cur - 1].forEach(function (n) { var x = items[(n + items.length) % items.length]; if (x && !isVideoUrl(x.getAttribute('href'))) (new Image()).src = x.getAttribute('href'); });
     }
     function open(group, a) {
       items = $$('[data-lightbox]', group);
@@ -131,6 +152,7 @@
       lb.hidden = true;
       document.body.classList.remove('lb-open');
       lbImg.removeAttribute('src');
+      stopVideo();
       if (lastFocus) lastFocus.focus();
     }
     document.addEventListener('click', function (e) {

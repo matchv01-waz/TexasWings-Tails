@@ -6,11 +6,11 @@
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <label class="dropzone-label">
       <%- icon('upload') %>
-      <strong>Tap to add photos</strong>
-      <span>You can choose several at once · JPG, PNG, HEIC or WebP</span>
-      <input type="file" name="photos" accept="image/*" multiple data-auto-upload>
+      <strong>Tap to add photos or videos</strong>
+      <span>You can choose several at once · photos, or MP4/MOV videos up to 20 MB</span>
+      <input type="file" name="photos" accept="image/*,video/mp4,video/quicktime,video/webm" multiple data-auto-upload>
     </label>
-    <p class="upload-status" data-upload-status hidden>Uploading and optimizing photos… please wait.</p>
+    <p class="upload-status" data-upload-status hidden>Uploading… please wait.</p>
     <noscript><button class="btn btn-primary" type="submit">Upload</button></noscript>
   </form>
   <% if (photos.length) { %>

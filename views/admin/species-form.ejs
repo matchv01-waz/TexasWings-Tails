@@ -67,7 +67,7 @@
     </section>
   </div>
   <aside class="edit-side">
-    <section class="card sticky-card">
+    <section class="card">
       <h2 class="card-title">Main photo</h2>
       <% if (sp.hero) { %>
       <div class="current-image"><%- imgTag(sp.hero, { alt: '', sizes: '320px' }) %></div>
@@ -75,6 +75,16 @@
       <% } %>
       <label class="dropzone-label dropzone-sm"><%- icon('upload') %><strong><%= sp.hero ? 'Replace photo' : 'Choose a photo' %></strong><span>Wide photos or videos (up to 20 MB) work best</span><input type="file" name="hero" accept="image/*,video/mp4,video/quicktime,video/webm" data-preview></label>
       <div class="preview-grid" data-preview-grid></div>
+      <h2 class="card-title">Card image</h2>
+      <p class="help">Shown on the Our Birds page and homepage. Separate from the main photo or video above.</p>
+      <% if (sp.card) { %>
+      <div class="current-image"><%- imgTag(sp.card, { alt: '', sizes: '320px' }) %></div>
+      <label class="check-row"><input type="checkbox" name="remove_card" value="1"><span>Remove this image</span></label>
+      <% } %>
+      <label class="dropzone-label dropzone-sm"><%- icon('upload') %><strong><%= sp.card ? 'Replace image' : 'Choose an image' %></strong><span>Tall photos work best</span><input type="file" name="card" accept="image/*" data-preview></label>
+      <div class="preview-grid" data-preview-grid></div>
+    </section>
+    <section class="card sticky-card">
       <div class="field">
         <label for="accent">Placeholder color</label>
         <input id="accent" name="accent" type="color" value="<%= v('accent') || '#6f8f5e' %>">

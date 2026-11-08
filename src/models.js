@@ -93,7 +93,11 @@ async function listSpecies({ publishedOnly = true } = {}) {
   const rows = await all(`SELECT s.*,
       (SELECT COUNT(*)::int FROM birds b WHERE b.species_id = s.id AND b.status IN ('available','coming_soon')) AS open_count,
       (SELECT COUNT(*)::int FROM birds b WHERE b.species_id = s.id) AS bird_count,
-      COALESCE(s.hero_image_id, (SELECT image_id FROM species_photos p WHERE p.species_id = s.id ORDER BY p.sort_order LIMIT 1)) AS cover_id
+      -- Cards always show a picture: the card image, else the first photo. Never a video.
+      COALESCE(s.card_image_id,
+        (SELECT i.id FROM images i WHERE i.id = s.hero_image_id AND i.video IS NULL),
+        (SELECT p.image_id FROM species_photos p JOIN images i ON i.id = p.image_id
+          WHERE p.species_id = s.id AND i.video IS NULL ORDER BY p.sort_order LIMIT 1)) AS cover_id
     FROM species s ${publishedOnly ? 'WHERE s.published = 1' : ''} ORDER BY s.sort_order, s.name`);
   const imgs = await getImages(rows.map((r) => r.cover_id));
   for (const s of rows) { s.cover = imgs.get(s.cover_id) || null; s.url = `/species/${s.slug}`; }
@@ -105,6 +109,7 @@ async function getSpecies(where, value) {
   const s = await get(`SELECT * FROM species WHERE ${where === 'id' ? 'id' : 'slug'} = ?`, where === 'id' ? Number(value) : String(value));
   if (!s) return null;
   s.hero = await getImage(s.hero_image_id);
+  s.card = await getImage(s.card_image_id);
   const rows = await all('SELECT image_id FROM species_photos WHERE species_id = ? ORDER BY sort_order, image_id', s.id);
   const imgs = await getImages(rows.map((r) => r.image_id));
   s.photos = rows.map((r) => imgs.get(r.image_id)).filter(Boolean);

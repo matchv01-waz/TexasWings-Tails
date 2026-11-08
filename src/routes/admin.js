@@ -341,7 +341,7 @@ for (const [kind, t] of Object.entries(PHOTO_TABLES)) {
 // ================= SPECIES =================
 const SPECIES_TEXT = ['name', 'singular', 'scientific_name', 'tagline', 'overview', 'personality', 'characteristics',
   'care', 'size', 'lifespan', 'noise_level', 'diet', 'socialization', 'accent'];
-const SPECIES_COLS = [...SPECIES_TEXT, 'published', 'hero_image_id'];
+const SPECIES_COLS = [...SPECIES_TEXT, 'published', 'hero_image_id', 'card_image_id'];
 
 router.get('/species', async (req, res) => {
   res.render('admin/species', { title: 'Species', species: await m.listSpecies({ publishedOnly: false }) });
@@ -370,6 +370,15 @@ async function speciesFromReq(req, existing) {
     errors.push(...r.errors);
   } else if (b.remove_hero) heroId = null;
   data.hero_image_id = heroId;
+  let cardId = existing ? existing.card_image_id : null;
+  const cardFile = filesFor(req, 'card');
+  if (cardFile.some((f) => f.video || /^video\//.test(f.mimetype || ''))) errors.push('The card image must be a photo, not a video.');
+  else if (cardFile.length && data.name) {
+    const r = await images.saveUploads(cardFile, data.singular || data.name);
+    if (r.ids[0]) cardId = r.ids[0];
+    errors.push(...r.errors);
+  } else if (b.remove_card) cardId = null;
+  data.card_image_id = cardId;
   return { data, errors };
 }
 
@@ -397,7 +406,7 @@ router.post('/species/:id', async (req, res, next) => {
   const { data, errors } = await speciesFromReq(req, existing);
   if (!data.name) return res.status(422).render('admin/species-form', { title: `Edit ${existing.name}`, sp: { ...existing, ...data, photos: [] }, errors });
   await run(`UPDATE species SET ${SPECIES_COLS.map((k) => `${k} = ?`).join(', ')}, updated_at = now() WHERE id = ?`, ...SPECIES_COLS.map((k) => data[k]), existing.id);
-  if (existing.hero_image_id !== data.hero_image_id) await images.purgeImages([existing.hero_image_id]);
+  await images.purgeImages([existing.hero_image_id, existing.card_image_id].filter((x) => x !== data.hero_image_id && x !== data.card_image_id));
   back(res, `/admin/species/${existing.id}`, 'saved', errors.join(' '));
 });
 
@@ -406,10 +415,10 @@ router.post('/species/:id/delete', async (req, res) => {
   if (!id) return back(res, '/admin/species', 'deleted');
   const n = (await get('SELECT COUNT(*)::int AS n FROM birds WHERE species_id = ?', id)).n;
   if (n) return back(res, `/admin/species/${id}`, '', `This species still has ${n} bird${n === 1 ? '' : 's'}. Move or delete them first, or simply hide the species.`);
-  const sp = await get('SELECT hero_image_id FROM species WHERE id = ?', id);
+  const sp = await get('SELECT hero_image_id, card_image_id FROM species WHERE id = ?', id);
   const imgIds = (await all('SELECT image_id FROM species_photos WHERE species_id = ?', id)).map((r) => r.image_id);
   await run('DELETE FROM species WHERE id = ?', id);
-  await images.purgeImages([...imgIds, sp && sp.hero_image_id]);
+  await images.purgeImages([...imgIds, sp && sp.hero_image_id, sp && sp.card_image_id]);
   back(res, '/admin/species', 'deleted');
 });
 

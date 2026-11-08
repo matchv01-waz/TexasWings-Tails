@@ -147,6 +147,8 @@ CREATE TABLE IF NOT EXISTS throttle (
 CREATE INDEX IF NOT EXISTS throttle_key_at ON throttle (key, at);
 -- Videos live in the images table too; "video" is the file extension (NULL for photos).
 ALTER TABLE images ADD COLUMN IF NOT EXISTS video TEXT;
+-- Optional separate picture for a species' card (Our Birds page, homepage, About).
+ALTER TABLE species ADD COLUMN IF NOT EXISTS card_image_id INTEGER REFERENCES images(id) ON DELETE SET NULL;
 `;
 
 // "?" → "$1, $2 …" (none of our SQL contains a literal question mark)

@@ -146,7 +146,7 @@ async function isReferenced(id) {
   return !!(await get(`SELECT 1 AS x WHERE
       EXISTS (SELECT 1 FROM bird_photos WHERE image_id = $1)
    OR EXISTS (SELECT 1 FROM species_photos WHERE image_id = $1)
-   OR EXISTS (SELECT 1 FROM species WHERE hero_image_id = $1)
+   OR EXISTS (SELECT 1 FROM species WHERE hero_image_id = $1 OR card_image_id = $1)
    OR EXISTS (SELECT 1 FROM gallery WHERE image_id = $1)
    OR EXISTS (SELECT 1 FROM testimonials WHERE image_id = $1)
    OR EXISTS (SELECT 1 FROM settings WHERE key IN (${keys}) AND value = $2)`, id, String(id)));

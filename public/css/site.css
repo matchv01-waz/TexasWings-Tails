@@ -121,8 +121,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .main-nav { display: none; }
 .nav-open .main-nav {
-  display: flex; flex-direction: column; position: fixed; inset: var(--header-h) 0 0 0; z-index: 49;
-  background: var(--ivory); padding: 12px var(--gutter) 32px; overflow-y: auto; animation: navIn .22s ease-out;
+  /* Not position: fixed — the header's backdrop-filter would shrink the panel to the header's own height. */
+  display: flex; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0; z-index: 49;
+  height: calc(100vh - 100%); height: calc(100dvh - 100%);
+  background: var(--ivory); padding: 12px var(--gutter) calc(32px + env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; animation: navIn .22s ease-out;
 }
 @keyframes navIn { from { opacity: 0; transform: translateY(-8px); } }
 .nav-list { list-style: none; margin: 0; padding: 0; }
@@ -135,7 +137,7 @@ body.nav-open { overflow: hidden; }
 @media (min-width: 1040px) {
   .nav-toggle { display: none; }
   .header-cta { display: inline-flex; }
-  .main-nav, .nav-open .main-nav { display: block; position: static; padding: 0; background: none; animation: none; overflow: visible; }
+  .main-nav, .nav-open .main-nav { display: block; position: static; height: auto; padding: 0; background: none; animation: none; overflow: visible; }
   .nav-list { display: flex; gap: 2px; }
   .nav-list .nav-home, .nav-list li:last-child { display: none; }
   .nav-list a { font-family: var(--sans); font-size: .98rem; font-weight: 500; padding: 8px 14px; border: 0; border-radius: 999px; color: var(--ink); }
@@ -584,7 +586,7 @@ body.nav-open { overflow: hidden; }
 /* ---------- mobile action bar + floating WhatsApp ---------- */
 .mobile-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: flex; gap: 10px; padding: 10px var(--gutter) calc(10px + env(safe-area-inset-bottom)); background: rgba(250, 246, 238, .94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(0, 0, 0, .06); transition: transform .25s; }
 .mobile-bar .btn { flex: 1; min-height: 50px; padding: .6em .8em; font-size: .98rem; }
-.mobile-bar.is-hidden { transform: translateY(110%); }
+.mobile-bar.is-hidden, .nav-open .mobile-bar { transform: translateY(110%); }
 @media (min-width: 900px) { .mobile-bar { display: none; } }
 .wa-float { display: none; }
 @media (min-width: 900px) {
@@ -621,3 +623,11 @@ body.lb-open { overflow: hidden; }
   content: ''; position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; pointer-events: none;
   background: rgba(0, 0, 0, .55) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 5v14l11-7z' fill='white'/%3E%3C/svg%3E") no-repeat 55% 50% / 24px;
 }
+
+/* ---------- chat widget ---------- */
+/* The chat button sits in the bottom-right corner, so the other floating buttons make room for it. */
+body:has(#omnihand-widget) .wa-float { bottom: 92px; }
+/* On phones it rides above the bottom bar instead. site.js applies this inside the widget. */
+@media (max-width: 899px) { body:has(.mobile-bar) { --chat-bottom: calc(96px + env(safe-area-inset-bottom)); } }
+/* Full-screen views keep their own controls clear. */
+.lb-open #omnihand-widget, .nav-open #omnihand-widget, body:has(.filters.is-open) #omnihand-widget { display: none; }

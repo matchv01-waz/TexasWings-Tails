@@ -28,6 +28,23 @@
       });
     }
 
+    // ---- chat widget: lift its button by --chat-bottom (site.css) ----
+    // It lives in a shadow root with an inline position, so page CSS can't reach it.
+    var chatTries = 0;
+    var chatTimer = setInterval(function () {
+      var chat = $('#omnihand-widget');
+      if (chat && chat.shadowRoot) {
+        clearInterval(chatTimer);
+        if (!chat.shadowRoot.adoptedStyleSheets) return;
+        var sheet = new CSSStyleSheet();
+        sheet.replaceSync(
+          'button[aria-expanded] { bottom: var(--chat-bottom, 20px) !important; }' +
+          'div.animate-pop[style*="bottom"] { bottom: calc(var(--chat-bottom, 20px) + 68px) !important; }'
+        );
+        chat.shadowRoot.adoptedStyleSheets = chat.shadowRoot.adoptedStyleSheets.concat(sheet);
+      } else if (++chatTries > 80) clearInterval(chatTimer);
+    }, 250);
+
     // ---- filters: mobile drawer + auto-submit ----
     var filters = $('[data-filters]');
     var scrim;

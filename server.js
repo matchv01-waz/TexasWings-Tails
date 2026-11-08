@@ -36,19 +36,20 @@ if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PRO
 app.get('/healthz', (req, res) => res.type('text/plain').send('ok'));
 
 const photoOrigin = storage.publicOrigin();
+const CHAT_ORIGIN = 'https://api.omnihandai.com'; // OmniHand chat widget (public pages)
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: false,
     directives: {
       defaultSrc: ["'self'"],
       // The hash allows only the one-line inline script that sets <html class="js">.
-      scriptSrc: ["'self'", "'sha256-PtdI6/36DhPdMEgjNWV5ExIEqFovVcjUHPeOyApfBhs='"],
+      scriptSrc: ["'self'", "'sha256-PtdI6/36DhPdMEgjNWV5ExIEqFovVcjUHPeOyApfBhs='", CHAT_ORIGIN],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'blob:', ...(photoOrigin ? [photoOrigin] : [])],
+      imgSrc: ["'self'", 'data:', 'blob:', CHAT_ORIGIN, ...(photoOrigin ? [photoOrigin] : [])],
       mediaSrc: ["'self'", 'blob:', ...(photoOrigin ? [photoOrigin] : [])],
       fontSrc: ["'self'"],
       // Videos are uploaded from the browser straight to the R2 bucket.
-      connectSrc: ["'self'", ...(storage.uploadOrigin() ? [storage.uploadOrigin()] : [])],
+      connectSrc: ["'self'", CHAT_ORIGIN, 'wss://api.omnihandai.com', ...(storage.uploadOrigin() ? [storage.uploadOrigin()] : [])],
       formAction: ["'self'"],
       frameAncestors: ["'none'"],
       objectSrc: ["'none'"],
